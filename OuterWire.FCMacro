@@ -1,0 +1,21 @@
+import TechDraw
+import Part
+
+def createMesh(obj):
+    edges = []
+    groups = TechDraw.projectEx(obj.Shape, App.Vector(0, 0, 1))
+    for g in groups[0:5]:
+        if not g.isNull():
+            edges.extend(g.Edges)
+
+    outer = TechDraw.findOuterWire(edges)
+    face = Part.makeFace([outer], "Part::FaceMakerBullseye")
+    msh = App.ActiveDocument.addObject("Mesh::Feature", "Mesh")
+    new_msh = msh.Mesh.copy()
+    new_msh.addFacets(face.tessellate(1.0))
+    msh.Mesh = new_msh
+
+objList = FreeCADGui.Selection.getSelection()
+
+for obj in objList:
+    createMesh(obj)

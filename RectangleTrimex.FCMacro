@@ -1,0 +1,34 @@
+from PySide import QtCore
+import FreeCADGui as Gui
+
+class MultiCommand:
+    def __init__(self, commands):
+        timer = QtCore.QTimer()
+        timer.timeout.connect(self._timer_callback)
+        timer.setInterval(100)  # ms
+        self._timer = timer
+        self.commands = list(commands)
+        self._states = ['wait_nodialog', 'run_cmd', 'wait_dialog']
+        print(f'Macros start')
+        timer.start()
+
+    def _timer_callback(self):
+        s = self._states[0]
+        # print(s)
+        if s == 'wait_nodialog':
+            if Gui.Control.activeDialog():
+                return
+        elif s == 'wait_dialog':
+            if not Gui.Control.activeDialog():
+                return
+        elif s == 'run_cmd':
+            if self.commands:
+                print(self.commands)
+                Gui.runCommand(self.commands.pop(0))
+            else:
+                self._timer.stop()
+                print(f'Macros finished')
+        self._states = self._states[1:] + self._states[:1]
+
+
+mc = MultiCommand(['Draft_Rectangle', 'Draft_Trimex', 'Draft_Dimension'])

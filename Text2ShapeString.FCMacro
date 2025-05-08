@@ -1,0 +1,34 @@
+import FreeCAD as App
+import Draft
+
+font = "/usr/share/fonts/liberation/LiberationMono-Bold.ttf"
+tracking = 0
+fontSizeCorection = 0.75
+lineSpace = 1
+
+print('Macros text2ShapeString')
+
+objList = FreeCADGui.Selection.getSelection()
+for obj in objList:
+    if not obj.TypeId == 'App::FeaturePython': continue
+    
+    posX = obj.Placement.Base.x
+    posY = obj.Placement.Base.y
+    posZ = obj.Placement.Base.z
+    
+    objFontSize = obj.ViewObject.FontSize.Value * fontSizeCorection
+
+    for i in range(len(obj.Text)):
+        linesOffset = (objFontSize + lineSpace)*i
+        textLine = obj.Text[i]
+        SSObj = Draft.make_shapestring(
+                textLine,
+                font,
+                objFontSize,
+                tracking)
+        SSObj.Placement.Base = App.Vector(
+                               posX,
+                               posY-linesOffset,
+                               posZ)
+        SSObj.Label = f'{obj.Label}_SS'
+        print(f'line{i}: {textLine}')

@@ -1,0 +1,76 @@
+'''
+Macro to create gcode forprocessing fillet by BallEnd mill
+2025-02-19 14:20
+
+https://forum.freecad.org/viewtopic.php?t=94642
+'''
+
+print('\n------- Macro to create gcode for processing fillet by BallEnd mill')
+
+
+step = 0.2       # Max vertical or horizontal movement
+inc = step/10    # Step for calculation
+filletRadius = 4
+
+
+objList = FreeCADGui.Selection.getSelection()
+if not objList:
+    print(f'Please select base profile in top of fillet')
+
+else:
+    baseProfile = objList[0]
+
+    startDepth = baseProfile.StartDepth.Value
+    toolDiam = baseProfile.ToolController.Tool.Diameter.Value
+
+    finalDepth = startDepth-toolDiam/2-filletRadius
+    effectiveRadius = filletRadius + toolDiam/2
+
+    gcode = []
+    currentDepth = startDepth
+
+    for i in range (1,100,1):
+        effectiveHeight = effectiveRadius - (startDepth-currentDepth)
+        offsetExtraPrev =(effectiveRadius**2 - effectiveHeight**2)**0.5
+        currentDepthPrev = currentDepth
+        for j in range(1, 100, 1):
+            currentDepth -= inc
+            effectiveHeight = effectiveRadius - (startDepth-currentDepth)
+            offsetExtra =(effectiveRadius**2 - effectiveHeight**2)**0.5
+
+            if ( (offsetExtra - offsetExtraPrev)   >= step
+            or   (currentDepthPrev - currentDepth) >= step
+            or currentDepth <= finalDepth):
+                # Get next optimal depth
+                break
+        else:
+            print(f'Macro overlimit B')
+
+        if currentDepth <= finalDepth + 0.001: break
+
+
+        print(f'depth={currentDepth:.2f} OffsetExtra={offsetExtra:.2f}')
+        # Set currentDepth and offsetExtra to Profile
+        baseProfile.FinalDepth = currentDepth
+        baseProfile.OffsetExtra = offsetExtra
+        baseProfile.recompute()
+        gcodeCurrent = [c.toGCode() for c in baseProfile.Path.Commands]
+        # Get gcode from profile path
+        gcode += gcodeCurrent
+
+    else:
+        print(f'Macro overlimit A')
+
+    # Return initial depth and offsetExtra to Profile
+    baseProfile.FinalDepth = startDepth
+    baseProfile.OffsetExtra = 0
+
+    print(f'filletRadius={filletRadius} toolDiam={toolDiam} startDepth={startDepth} finalDepth={finalDepth}')
+
+    res = Path.Op.Gui.Custom.Command.res
+    filletGcode = Path.Op.Custom.Create("filletGcode")
+    filletGcode.ViewObject.Proxy = Path.Op.Gui.Custom.PathOpGui.ViewProvider(filletGcode.ViewObject, res)
+    filletGcode.Gcode = gcode
+    filletGcode.ViewObject.Visibility = True
+    filletGcode.ViewObject.Proxy.deleteOnReject = False
+    filletGcode.recompute()

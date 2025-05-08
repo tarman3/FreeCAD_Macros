@@ -1,0 +1,39 @@
+# Macro to remove transparency from selected objects
+#If you need to process all objects in document, press CTRL+A and run the Macro
+
+def main(obj):
+    vobj = obj.ViewObject
+    if not hasattr(vobj, 'Selectable'): return None
+    
+    vobj.Selectable = False
+    Gui.Selection.addSelection(doc.Name, obj.Name)
+
+    if int(FreeCAD.Version()[0]) == 1 and int(FreeCAD.Version()[1]) > 0:
+        # for new FreeCAD
+        transparency = 0
+    else:
+        # for old FreeCAD
+        transparency = 1.0
+
+    vobj.Transparency = transparency
+    vobj.Selectable = True
+
+        
+objList = FreeCADGui.Selection.getSelection()
+
+if not objList:
+    outMessage = f'{outMessage}\nNothing selected'
+    print(outMessage)
+else:
+    Gui.Selection.clearSelection()
+    
+    doc = App.ActiveDocument
+    
+    for obj in objList:
+        if obj.TypeId == 'App::DocumentObjectGroup':
+            # If selected Group, processing all objects in Group
+            for groupObj in obj.Group:
+                main(groupObj)
+        else:
+            main(obj)
+

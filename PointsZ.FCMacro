@@ -1,0 +1,86 @@
+import Draft
+
+textHeight = 3      # Percent from max Size 
+textOffsetX = 0.1   # Percent from max Size
+textOffsetY = 0.1   # Percent from max Size
+textGroupName = 'TextZ'
+
+# -----------------------------
+
+if int(FreeCAD.Version()[3].split()[0]) > 39109:
+    transparency = 100.0
+else:
+    transparency = 1.0
+        
+def colfunc(val, minval, maxval, startcolor, stopcolor):
+    """ Convert value in the range minval...maxval to a color in the range
+        startcolor to stopcolor. The colors passed and the one returned are
+        composed of a sequence of N component values (e.g. RGB).
+    """
+    f = float(val-minval) / (maxval-minval)
+    return tuple(f*(b-a)+a for (a, b) in zip(startcolor, stopcolor))
+    
+RED, YELLOW, GREEN  = (1, 0, 0), (1, 1, 0), (0, 1, 0)
+CYAN, BLUE, MAGENTA = (0, 1, 1), (0, 0, 1), (1, 0, 1)
+    
+minX = 0
+maxX = 0
+minY = 0
+maxY = 0
+minZ = 0
+maxZ = 0
+objList = FreeCADGui.Selection.getSelection()
+for obj in objList:
+
+    posX = obj.Placement.Base.x
+    posY = obj.Placement.Base.y
+    posZ = obj.Placement.Base.z
+
+    if posX > maxX: maxX = posX
+    if posX < minX: minX = posX
+
+    if posY > maxY: maxY = posY
+    if posY < minY: minY = posY
+
+    if posZ > maxZ: maxZ = posZ
+    if posZ < minZ: minZ = posZ
+
+print(f'minZ={minZ} maxZ={maxZ}')
+deltaX = abs(maxX - minX)
+deltaY = abs(maxY - minY)
+maxSize = max(deltaX, deltaY)
+print(f'maxSize = {maxSize}')
+
+fontHeight = int(textHeight * maxSize / 100)
+print(f'fontHeight = {fontHeight}')
+
+doc = FreeCAD.ActiveDocument
+grp = doc.addObject("App::DocumentObjectGroup", textGroupName)
+
+for obj in objList:
+    posX = obj.Placement.Base.x
+    posY = obj.Placement.Base.y
+    posZ = obj.Placement.Base.z
+    
+    pl = FreeCAD.Placement()
+    pl.Rotation.Q = (0.0, 0.0, 0.0, 1.0)
+    pl.Base = FreeCAD.Vector(
+              posX+maxSize*textOffsetX/100,
+              posY+maxSize*textOffsetY/100,
+              posZ)
+
+    Zft = str(round(posZ/304.8,1))#.strip('.0')
+    markerZ = f'{Zft}\''
+    textObj = Draft.make_text(
+              [markerZ],
+              placement=pl,
+              screen=None,
+              height=fontHeight,
+              line_spacing=None)
+
+    grp.addObject(textObj)
+    
+    
+    color = colfunc(posZ, minZ, maxZ, GREEN, RED) + (transparency,)
+    vobj = obj.ViewObject
+    vobj.PointColor = color

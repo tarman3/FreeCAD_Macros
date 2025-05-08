@@ -1,0 +1,10 @@
+from PySide import QtCore
+timer = QtCore.QTimer()
+
+def test():
+    print('running')
+
+timer = QtCore.QTimer()
+timer.timeout.connect(test)
+timer.start(250)
+

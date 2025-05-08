@@ -1,0 +1,33 @@
+# -*- coding: utf-8 -*-
+
+# ------------ Export STP model to PrusaSlicer ------------
+
+slicer_path = 'prusa-slicer' # Path to slicer
+
+save_to_temp = True    # Save STP to temp folder
+#save_to_temp = False  # Save STP near FCStd
+
+# ---------------------------------------------------------
+
+import ImportGui
+import os
+import subprocess
+import tempfile
+
+objects_to_export = FreeCADGui.Selection.getSelection()
+slicer_args = [slicer_path]
+
+for object in objects_to_export:
+    label = object.Label
+    doc = FreeCAD.activeDocument()
+    filename = os.path.basename(doc.FileName).partition('.')[0]
+    if save_to_temp:
+        dirname = tempfile.gettempdir()
+        file_path = os.path.join(dirname, filename) + '-' + label + '.step'
+    else:
+        dirname = os.path.dirname(doc.FileName)
+        file_path = os.path.join(dirname, filename) + '-' + label + '.step'
+    slicer_args.append(file_path)
+    ImportGui.export([object], file_path)
+
+subprocess.Popen(slicer_args)

@@ -1,0 +1,157 @@
+"""
+Macro to toggle visibility any object, especially Job objects from CAM workbench and its contents
+
+2025-02-08 16:00 Toggle Body if only one element visible
+2025-02-14 14:57 Little improvements for Links, Part and Assembly
+
+https://forum.freecad.org/viewtopic.php?t=94541
+https://github.com/FreeCAD/FreeCAD/issues/12453
+https://github.com/FreeCAD/FreeCAD/issues/16005
+
+https://wiki.freecad.org/Std_ToggleVisibility
+https://wiki.freecad.org/PropertyLink:_InList_and_OutList
+https://wiki.freecad.org/Selection_API
+"""
+
+# Job parameters
+JobHidebaseObject = True   # Hide Object body while hidden Job
+JobShowStock = True        # Show Stock while showing the Job
+
+# PartDesign parameters
+PDtoggleBody = True       # If True and only one visible element in Body, hide Body instead of selected element
+
+
+def findVisible(body):
+    isVisible = set()
+    if body.TypeId == 'PartDesign::Body':
+        for obj in body.OutList:
+            if obj.Visibility:
+                isVisible.add(obj)
+                # print(obj.Name, obj.Visibility)
+    elif body.TypeId == 'App::Link':
+        for obj in body.LinkedObject.OutList:
+            if obj.Visibility: isVisible.add(obj)
+    print(f'    In object: {body.Name}')
+    print(f'    visible element(s): {len(isVisible)} {isVisible}\n')
+    return isVisible
+
+
+def toggleVisibility(obj, forcing=None):
+    global recDepth
+    # print(obj, obj.Name, obj.Visibility, '>', forcing)
+    if forcing == None:
+        obj.Visibility = not obj.Visibility
+        output = obj.Visibility
+    else:
+        obj.Visibility = forcing
+        output = forcing
+    # print(f'{"   "*recDepth} {obj.Name} {recDepth}')
+    return output
+
+
+def recursiveProcessing(o):
+    global recDepth
+    if o.OutList: recDepth += 1
+
+    for obj in o.OutList:
+        if 'Stock' in obj.Name:
+            if childState and JobShowStock:
+                toggleVisibility(obj, childState)
+            else: toggleVisibility(obj, False)
+
+        elif 'SetupSheet' in obj.Name:
+            if childState: continue
+            else: toggleVisibility(obj, False)
+
+        elif 'Tools' in obj.Name:
+            if childState: continue
+            else: toggleVisibility(obj, False)
+
+        elif 'ToolController' in obj.Content:
+            if childState: continue
+            else: toggleVisibility(obj, False)
+
+        elif 'ToolBit' in obj.Name:
+            if childState: continue
+            else: toggleVisibility(obj, False)
+
+        elif not obj.OutList:
+            if not childState and JobHidebaseObject:
+                toggleVisibility(obj, childState)
+
+        else: toggleVisibility(obj, childState)
+
+        if obj.OutList:
+            if (not 'Clone' in obj.Label) and (not 'Clone' in obj.Name):
+                recursiveProcessing(obj)
+            elif JobHidebaseObject and not childState:
+                toggleVisibility(obj.OutList[0], False)
+
+    recDepth -= 1
+
+
+doc = App.ActiveDocument
+# print('doc = ', doc.Name)
+
+selExList = FreeCADGui.Selection.getSelectionEx('', 0)
+
+print()
+print('<<< Macro VisibilityToggle >>>')
+if not selExList:
+    print('    >>> Nothing selected <<<')
+
+
+for selEx in selExList:
+    objSel = selEx.Object
+    sub = selEx.SubElementNames[0] if selEx.SubElementNames else ""
+    subObj = objSel.getSubObject(sub, 1)
+    # print()
+    # print()
+    # print('    >>>> selEx.SubElementNames', selEx.SubElementNames[0])
+    # print('    >>>> objSel', objSel, objSel.TypeId, objSel.Name)
+    # print('    >>>> subObj', subObj, subObj.TypeId, subObj.Name)
+
+    if objSel.TypeId == 'App::Part' and subObj.TypeId != 'App::Part':
+        for i in sub.split('.')[::-1]:
+            if 'Body' in i or 'Link' in i:
+                objName = i
+                break
+        objSel = doc.getObject(objName)
+
+    # print()
+    # print('    >>>> objSel', objSel, objSel.TypeId, objSel.Name)
+    # print('    >>>> subObj', subObj, subObj.TypeId, subObj.Name)
+
+    recDepth = 0
+
+    # For CAM Jobs selected
+    if 'Job' in objSel.Name:
+        childState = toggleVisibility(objSel)
+        print(f'    Job Toogle visibility from {not childState} to {childState}: {objSel.Name} ({objSel.Label})')
+        recursiveProcessing(objSel)
+
+    # For PartDesign::Body and Link to Body
+    elif (PDtoggleBody and
+          (objSel.TypeId=='PartDesign::Body') or (objSel.TypeId=='App::Link' and objSel.LinkedObject.TypeId=='PartDesign::Body')
+         ):
+        visible = findVisible(objSel)
+        if not subObj.Visibility:
+            visibility = toggleVisibility(subObj, True)
+            visibility = toggleVisibility(objSel, True)
+            print(f'    0 Toogle visibility from {not visibility} to {visibility}: {objSel.Name} ({objSel.Label})')
+
+        elif len(visible) == 1:
+            if subObj in visible:
+                visibility = toggleVisibility(objSel)
+                print(f'    1a Toogle visibility from {not visibility} to {visibility}: {objSel.Name} ({objSel.Label})')
+            else:
+                visibility = toggleVisibility(subObj)
+                print(f'    1b Toogle visibility from {not visibility} to {visibility}: {subObj.Name} ({subObj.Label})')
+        else:
+            visibility = toggleVisibility(subObj)
+            print(f'    2+ Toogle visibility from {not visibility} to {visibility}: {subObj.Name} ({subObj.Label})')
+
+    # For all other elements
+    else:
+        visibility = toggleVisibility(subObj)
+        print(f'    Else Toogle visibility from {not visibility} to {visibility}: {objSel.Name} ({objSel.Label})')

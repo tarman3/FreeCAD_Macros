@@ -1,0 +1,116 @@
+"""
+https://forum.freecad.org/viewtopic.php?t=92512
+
+A script I've been working on.It installs an event filter to intercept/modify mousewheel-arrowkey events for Qspinboxes. its ugly but seems to work ok.
+SHIFT scrolls by 0.1
+SHIFT+CONTROL by 0.05
+CONTROL by 10
+change the text in the Qspinbox to "stop" to quit the script
+"""
+
+from PySide import QtWidgets,QtGui,QtCore
+import os,FreeCAD,FreeCADGui,string
+
+app = QtGui.QApplication.instance()
+NUMERIC_CHARS = "+-." + string.digits
+ME = os.path.split(os.path.realpath(__file__))[1]
+def log(msg, level='info', end='\n'):
+    """wrapper for Console.<f>"""
+    match level:
+        case 'debug':FreeCAD.Console.PrintLog(f'{ME}: {msg}{end}')
+        case 'info':FreeCAD.Console.PrintMessage(f'{ME}: {msg}{end}')
+        case 'warning':FreeCAD.Console.PrintWarning(f'{ME}: {msg}{end}')
+        case 'error':FreeCAD.Console.PrintError(f'{ME}: {msg}{end}')
+        case 'notify':FreeCAD.Console.PrintNotification(f'{ME}: {msg}{end}')
+        case 'crit':FreeCAD.Console.PrintCritical(f'{ME}: {msg}{end}')
+
+class EventFilter(QtCore.QObject):
+
+    def calcdelta(self,indir):
+        val = 0.0
+        if indir < 0: val = -1
+        elif indir > 0: val = 1
+
+        modifiers = QtWidgets.QApplication.keyboardModifiers()
+        if modifiers == QtGui.Qt.ShiftModifier:
+            log("shift down",'debug')
+            val*=0.1
+        elif modifiers == QtGui.Qt.ControlModifier:
+            log("control down",'debug')
+            val*=10
+        elif modifiers == (QtGui.Qt.ShiftModifier | QtGui.Qt.ControlModifier):
+            log("shift and control down",'debug')
+            val*=0.05
+        elif modifiers == QtGui.Qt.AltModifier:
+            log("Alt down",'debug')
+        else:
+            log("no mod",'debug')
+        return val
+
+    def changeVal(self,inobj,inval):
+
+        #extract number and suffix
+        for i, c in enumerate(inobj.text()):
+            if not (c in NUMERIC_CHARS):break
+        n,e = inobj.text()[:i] , inobj.text()[i:]
+
+        # log ("n="+n + " e="+e,'debug')
+        if not n: return
+
+        if  type(inobj) == QtWidgets.QAbstractSpinBox:
+            newval = float(n) + inval
+            inobj.lineEdit().setText(format(newval, '.2f'))
+        if type(inobj) == QtWidgets.QDoubleSpinBox:
+            newval = float(n) + float(e)/100 + inval
+            inobj.setValue(newval)
+        inobj.stepBy(0) #triggers an update .would be nice if stepBy took a float then i could skip all the previous nonsense
+
+
+    def eventFilter(self, obj, event):
+        #only filter events for a spinbox
+        if  type(obj) != QtWidgets.QAbstractSpinBox and type(obj) != QtWidgets.QDoubleSpinBox:return False
+        match event.type():
+            case QtCore.QEvent.Enter:
+                QtWidgets.QToolTip.showText(obj.mapToGlobal(obj.pos()), obj.toolTip());
+            case QtCore.QEvent.Show:
+                obj.setToolTip("shift+control .05\nshift .1\ncontrol 10")
+                #QtWidgets.QToolTip.showText(obj.mapToGlobal(obj.pos()), obj.toolTip());
+            case QtCore.QEvent.KeyRelease:
+                if obj.text()=="stop":
+                    app.removeEventFilter(self)
+
+                    log ('filter removed','notify')
+                    return False
+
+            case QtCore.QEvent.KeyPress:
+
+                if event.key() == QtGui.Qt.Key_Up:
+                    self.changeVal(obj,self.calcdelta(1))
+                    event.accept()
+                    return True
+                elif event.key() == QtGui.Qt.Key_Down:
+                    self.changeVal(obj,self.calcdelta(-1))
+                    event.accept()
+                    return True
+
+            case QtCore.QEvent.Wheel:
+
+                log("Wheel event filtered!",'debug')
+                self.changeVal(obj,self.calcdelta(event.angleDelta().y()))
+                event.accept()
+                return True  # Stop event propagation
+
+        return False  # Pass event to target widget
+
+
+
+## Enclose the main instructions in a function
+def run():
+
+    event_filter = EventFilter(app)
+    app.installEventFilter(event_filter)
+    log ('filter installed','notify')
+
+## Ensure main instructions are still called in case of manual run
+if __name__ == '__main__':
+    run()

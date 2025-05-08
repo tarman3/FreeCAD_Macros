@@ -1,0 +1,192 @@
+# -*- coding: utf-8 -*-
+# ***************************************************************************
+# *   Copyright (c) 2025 Russell Johnson (russ4262) <russ4262@gmail.com>    *
+# *                                                                         *
+# *   This program is free software; you can redistribute it and/or modify  *
+# *   it under the terms of the GNU Lesser General Public License (LGPL)    *
+# *   as published by the Free Software Foundation; either version 2 of     *
+# *   the License, or (at your option) any later version.                   *
+# *   for detail see the LICENCE text file.                                 *
+# *                                                                         *
+# *   This program is distributed in the hope that it will be useful,       *
+# *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+# *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+# *   GNU Library General Public License for more details.                  *
+# *                                                                         *
+# *   You should have received a copy of the GNU Library General Public     *
+# *   License along with this program; if not, write to the Free Software   *
+# *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  *
+# *   USA                                                                   *
+# *                                                                         *
+# ***************************************************************************
+
+
+import FreeCAD
+import Draft
+import Part
+import Path.Op.Base as OpBase
+import PathScripts.PathUtils as PathUtils
+from PySide.QtCore import QT_TRANSLATE_NOOP
+
+if FreeCAD.GuiUp:
+    import FreeCADGui
+
+
+__title__ = "Path From Shape"
+__author__ = "Russell Johnson (russ4262) <russ4262@gmail.com>"
+__doc__ = "Creates a modified PathShape object with required child Part.Shape() object.\
+    Both the PathShape and Part.Shape() objects allow for parametric usage.\
+    The modifications also allow for inclusion in a Job object, with simulation capabilities."
+__usage__ = (
+    "Run this macro, with or without one or more edges selected from a single model."
+)
+__created__ = "25 January 2025"
+__url__ = ""
+__Wiki__ = ""
+
+
+def _addBaseProperties(obj):
+    # Add base set of operation properties
+    obj.addProperty(
+        "App::PropertyBool",
+        "Active",
+        "Path",
+        QT_TRANSLATE_NOOP(
+            "App::Property", "Make False, to prevent operation from generating code"
+        ),
+    )
+    obj.addProperty(
+        "App::PropertyString",
+        "Comment",
+        "Path",
+        QT_TRANSLATE_NOOP("App::Property", "An optional comment for this Operation"),
+    )
+    obj.addProperty(
+        "App::PropertyString",
+        "UserLabel",
+        "Path",
+        QT_TRANSLATE_NOOP("App::Property", "User Assigned Label"),
+    )
+    obj.addProperty(
+        "App::PropertyString",
+        "CycleTime",
+        "Path",
+        QT_TRANSLATE_NOOP("App::Property", "Operations Cycle Time Estimation"),
+    )
+    obj.setEditorMode("CycleTime", 1)  # read-only
+    obj.Active = True
+
+
+def _addToolController(obj):
+    # Add ToolController required properties
+    obj.addProperty(
+        "App::PropertyLink",
+        "ToolController",
+        "Path",
+        QT_TRANSLATE_NOOP(
+            "App::Property",
+            "The tool controller that will be used to calculate the path",
+        ),
+    )
+    obj.addProperty(
+        "App::PropertyDistance",
+        "OpToolDiameter",
+        "Op Values",
+        QT_TRANSLATE_NOOP("App::Property", "Holds the diameter of the tool"),
+    )
+    obj.setEditorMode("OpToolDiameter", 1)  # read-only
+    obj.ToolController = PathUtils.findToolController(obj, None)
+    if not obj.ToolController:
+        raise OpBase.PathNoTCException()
+    obj.OpToolDiameter = obj.ToolController.Tool.Diameter
+
+
+def _getToolControllers(obj, proxy=None):
+    """returns all the tool controllers
+    Modified getToolControllers() from PathScripts.PathUtils"""
+    try:
+        job = PathUtils.findParentJob(obj)
+    except Exception:
+        job = None
+
+    if job:
+        return [tc for tc in job.Tools.Group]
+    return []
+
+
+class ObjectPartShape(object):
+    def __init__(self, obj, base):
+        # Path.Log.info("ObjectPartShape.__init__()")
+        self.obj = obj
+        obj.addProperty(
+            "App::PropertyLinkSubListGlobal",
+            "Base",
+            "Path",
+            QT_TRANSLATE_NOOP("App::Property", "The base geometry for this operation"),
+        )
+        obj.Base = base
+
+    def __getstate__(self):
+        return None
+
+    def __setstate__(self, state):
+        return None
+
+    def onDelete(self, obj, args):
+        return True
+
+    def onDocumentRestored(self, obj):
+        self.obj = obj
+
+    def onChanged(self, obj, prop):
+        """onChanged(obj, prop) ... method called when objECT is changed,
+        with source propERTY of the change."""
+
+        if "Restore" in obj.State:
+            pass
+
+    def execute(self, obj):
+        edges = []
+        if len(obj.Base) > 0:
+            (base, subNames) = obj.Base[0]
+            edges = [
+                base.Shape.getElement(sub).copy()
+                for sub in subNames
+                if sub.startswith("Edge")
+            ]
+
+        if edges:
+            obj.Shape = Part.Wire(Part.__sortEdges__(edges))
+        else:
+            obj.Shape = Part.Shape()
+
+
+# Eclass
+
+
+def Create(base):
+    doc = FreeCAD.ActiveDocument
+
+    # shapeObj = doc.addObject("Part::FeaturePython", "PartShape")
+    # shapeObj.Proxy = ObjectPartShape(shapeObj, base)
+    shapeObj = Draft.make_clone(base[0][0])
+    obj = doc.addObject("Path::FeatureShape", "PathShape")
+    obj.Sources = [shapeObj]
+    __ = PathUtils.addToJob(obj)
+    _addBaseProperties(obj)
+    _addToolController(obj)
+    return obj
+
+
+# overwrite getToolControllers() function with modified version
+PathUtils.getToolControllers = _getToolControllers
+base = []
+
+if FreeCAD.GuiUp:
+    selection = FreeCADGui.Selection.getSelectionEx()
+    if selection:
+        base = [(selection[0].Object, selection[0].SubElementNames)]
+
+obj = Create(base)
+
+FreeCAD.ActiveDocument.recompute()

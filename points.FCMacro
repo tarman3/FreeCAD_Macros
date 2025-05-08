@@ -1,0 +1,7 @@
+selection = FreeCADGui.Selection.getSelection()
+
+pos = []
+for obj in selection:
+    pos.append(f'{obj.Shape.Vertexes[0].X} {obj.Shape.Vertexes[0].Y} {obj.Shape.Vertexes[0].Z}')
+    
+print('\n'.join(pos))

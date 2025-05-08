@@ -1,0 +1,25 @@
+# FreeCAD Macro SelectVisible
+
+__Name__ = 'Select Visible'
+__Comment__ = 'All visible objects in the tree will be selected'
+__Web__ = 'http://www.freecadweb.org/wiki/Macro_SelectVisible'
+__Wiki__ = 'http://www.freecadweb.org/wiki/Macro_SelectVisible'
+__Icon__ = 'SelectVisible.svg'
+__Help__ = 'All visible objects in the tree and only these will be selected'
+__Author__ = 'galou_breizh'
+__Version__ = '1.0'
+__Status__ = 'Production'
+__Requires__ = ''
+
+import FreeCAD as App
+import FreeCADGui as Gui
+
+doc = App.activeDocument()
+
+if not doc:
+    App.Console.PrintWarning('SelectVisible: no active document')
+else:
+    Gui.Selection.clearSelection()
+    for o in doc.Objects:
+        if o.ViewObject.Visibility:
+            Gui.Selection.addSelection(o)

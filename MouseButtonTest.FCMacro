@@ -1,0 +1,31 @@
+from pivy.coin import *
+class inputPoints:
+#
+# input two points using left button, then do the work. End pressing right button
+#
+	def __init__(self):
+		self.view = FreeCADGui.ActiveDocument.ActiveView 
+		self.stack = [] 
+		self.callback = self.view.addEventCallbackPivy(SoMouseButtonEvent.getClassTypeId(), self.getPoints) 
+
+	def getPoints(self, event_callback):
+	#
+	# slot: a mouse button has been pressed
+	#
+		event = event_callback.getEvent() 
+		if event.getButton() == 1: # left mouse
+			if event.getState() == SoMouseButtonEvent.DOWN:
+				pos = event.getPosition() 
+				point = self.view.getPoint(pos[0], pos[1]) 
+				self.stack.append(point) 
+			if len(self.stack) == 2: 
+				self.doOneSession()
+				self.stack = [] # clear stack for next session
+		else: # getButton() == 2, right mouse
+			self.view.removeEventCallbackPivy(SoMouseButtonEvent.getClassTypeId(), self.callback)
+			print('-- macro finished regular --')
+
+	def doOneSession(self):
+		print('do one session')
+
+inputPoints()

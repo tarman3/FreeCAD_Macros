@@ -1,0 +1,22 @@
+# Macro to set identical Tool Controller for all operations in Job
+
+print()
+print('<<< Macro to set identical Tool Controller >>>')
+print()
+
+
+selection = FreeCADGui.Selection.getSelection()
+
+
+if not selection or not hasattr(selection[0], 'Tool'):
+    print('    Please select ToolController object')
+
+else:
+    tool = selection[0]
+    job = PathUtils.findParentJob(tool)
+
+    for operation in job.Operations.OutListRecursive:
+        if hasattr(operation, 'ToolController'):
+            operation.ToolController = tool
+            print(f'    Set {tool.Label} for {operation.Label}')
+        

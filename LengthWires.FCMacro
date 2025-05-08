@@ -1,0 +1,17 @@
+# Calculate length of selected wires
+
+objList = FreeCADGui.Selection.getSelection()
+
+output = '------- Run macro LengthWires -------\n\n'
+
+totalLength = 0
+
+for obj in objList:
+    objLength = obj.Shape.Length
+    totalLength += objLength
+    output += f'Length of object {obj.Name} = {round(objLength)} mm\n'
+
+output += f'\nTotal length of selected wires = {round(totalLength)} mm\n'
+output += '------- ------- ------- ------- ------- -------'
+print()
+print(output)
