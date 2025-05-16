@@ -1,4 +1,6 @@
 """
+Edited for FreeCAD 1.0 compatibility
+
 This macro is inteneded to be used in the Sketcher Workbench.
 
 The idea is to place down some points, which are the center points of the Voronoi cells.
@@ -49,23 +51,23 @@ import numpy as np
 from numpy.linalg import det, norm
 from scipy.spatial import Voronoi, Delaunay, ConvexHull
 
-from PySide.QtGui import (
-        QMainWindow,
-        QDialog,
-        QLineEdit,
-        QPushButton,
-        QGridLayout,
-        QLabel,
-        QGroupBox,
-        QSpacerItem,
-        QMessageBox,
-        )
-from PySide import QtCore
+from PySide6.QtWidgets import (
+    QMainWindow,
+    QDialog,
+    QLineEdit,
+    QPushButton,
+    QGridLayout,
+    QLabel,
+    QGroupBox,
+    QSpacerItem,
+    QMessageBox,
+)
+from PySide6.QtCore import Qt
 
 
 def msg(title, message):
     diag = QMessageBox(QMessageBox.Warning, title, message)
-    diag.setWindowModality(QtCore.Qt.ApplicationModal)
+    diag.setWindowModality(Qt.ApplicationModal)
     diag.exec_()
 
 
@@ -89,7 +91,11 @@ def triangle_area(v0, v1, v2):
     :param np.array v1: point 2
     :param np.array v2: point 3
     """
-    return norm(np.cross(v1 - v0, v2 - v0, 0)) * 0.5
+    # Convert 2D vectors to 3D by appending a z-component of 0
+    v0_3d = np.append(v0, 0)
+    v1_3d = np.append(v1, 0)
+    v2_3d = np.append(v2, 0)
+    return norm(np.cross(v1_3d - v0_3d, v2_3d - v0_3d)) * 0.5
 
 
 def Det(u, v):
@@ -446,3 +452,4 @@ def voronoi_on_face(n, offset, tol):
 
 if __name__ == "__main__":
     form = VoronoiForm()
+

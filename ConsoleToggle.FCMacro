@@ -1,0 +1,37 @@
+'''
+Macros to toggle panels Python console and Report view
+2025-02-07
+
+Based on:
+https://forum.freecad.org/viewtopic.php?t=81537
+https://forum.freecad.org/viewtopic.php?t=30450
+'''
+
+from PySide import QtGui
+
+mw=Gui.getMainWindow()
+
+panelConsole=mw.findChild(QtGui.QDockWidget, 'Python console')
+panelReport=mw.findChild(QtGui.QDockWidget, 'Report view')
+
+if panelReport.isVisible() or panelConsole.isVisible():
+    panelReport.hide()
+    panelConsole.hide()
+else:
+    panelReport.show()
+    panelConsole.show()
+
+
+objs = FreeCADGui.Selection.getSelection()
+
+if objs:
+    cmd  = f'objs = FreeCADGui.Selection.getSelection()\n'
+    cmd += f'print("{len(objs)} objects (objs) sent to console:")\n'
+    cmd += f'i=0\n'
+    cmd += f'for obj in objs:\n'
+    cmd += f'    print("   ", f"objs[{{i}}]", "   ",obj.Name, "   ", obj.TypeId, sep="")\n'
+    cmd += f'    i += 1\n'
+    cmd += f'print()\n'
+    cmd += f'print("List of objects is available by variable: objs")\n'
+    cmd += f'print("Last object is available by variable: obj", "\\n")\n'
+    Gui.doCommandGui(cmd)

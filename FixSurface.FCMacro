@@ -1,0 +1,31 @@
+# Macro to fix face with null edges
+
+minLength = 0.0001
+
+import Draft
+import FreeCAD
+
+print('\n---------- Macro to fix face with null edges ----------\n')
+
+doc = FreeCAD.activeDocument()
+
+face = FreeCADGui.Selection.getSelection()[0]
+face.Visibility = False
+
+wire = Draft.downgrade(face, delete=False)[0][0]
+edges = Draft.downgrade(wire, delete=True)[0]
+
+newEdges = []
+for edge in edges:
+    if edge.Shape.Length < minLength:
+        print('null edge', edge.Label, edge.Shape.Length)
+        doc.removeObject(edge.Label)
+    else:
+        newEdges.append(edge)
+        
+newWire = Draft.upgrade(newEdges, delete=True)[0][0]
+
+newFace = Part.makeFilledFace(newWire.Shape.Edges)
+doc.removeObject(newWire.Label)
+
+doc.addObject('Part::Feature', f'{face.Label}_fixed').Shape = newFace

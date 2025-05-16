@@ -1,3 +1,5 @@
+# Set random color for selected objects
+
 import random
 
 def main(obj):

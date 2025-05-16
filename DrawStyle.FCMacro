@@ -1,0 +1,69 @@
+# Macro to toggle draw style selected objects
+
+
+transparency = 50
+
+
+from PySide import QtGui
+import FreeCADGui as Gui
+
+
+mw = Gui.getMainWindow()
+selection = Gui.Selection.getSelectionEx()
+
+
+act = {
+    0: mw.findChild(QtGui.QAction, "Std_DrawStyleAsIs"),
+    1: mw.findChild(QtGui.QAction, "Std_DrawStyleFlatLines"),
+    2: mw.findChild(QtGui.QAction, "Std_DrawStyleShaded"),
+    3: mw.findChild(QtGui.QAction, "Std_DrawStyleWireframe"),
+    4: mw.findChild(QtGui.QAction, "Std_DrawStylePoints"),
+    5: mw.findChild(QtGui.QAction, "Std_DrawStyleHiddenLine"),
+    6: mw.findChild(QtGui.QAction, "Std_DrawStyleNoShading"),
+    }
+
+default = act[0]
+actionA = act[0]
+actionB = act[3]
+
+
+if not selection:   # If nothing selected
+    if actionA.isChecked():
+        actionB.trigger()
+    else:
+        actionA.trigger()
+
+else:               # If something selected
+
+    #Get object list with links
+    objects = []
+    default.trigger()
+    for obj in selection:
+        if obj.Object.TypeId == "App::Link":
+            if obj.Object.LinkedObject not in objects:
+                objects.append(obj.Object.LinkedObject)
+        elif obj.Object not in selection:
+            objects.append(obj.Object)
+        else:
+            pass
+
+    for o in objects:
+        vobj = o.ViewObject
+
+        if vobj.DisplayMode == "Flat Lines" and vobj.Transparency == 0:
+            vobj.Transparency = transparency
+            vobj.LineWidth = 2
+            vobj.LineColor = (0.0,0.0,0.0,1.0) #Black
+
+        elif vobj.DisplayMode == "Flat Lines" and vobj.Transparency > 0:
+            vobj.Transparency = 0
+            vobj.DisplayMode = "Wireframe"
+            vobj.LineWidth = 3
+            vobj.LineColor = (1.0,0.0,0.0,1.0) #Red
+
+        else:
+            vobj.DisplayMode = "Flat Lines"
+            vobj.Transparency = 0
+            vobj.LineWidth = 2
+            vobj.LineColor = (0.0,0.0,0.0,1.0) #Black
+
