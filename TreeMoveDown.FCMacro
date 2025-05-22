@@ -1,0 +1,49 @@
+# Macro to move down selected operations in Job Operations group
+
+import Path
+import PathScripts.PathUtils as PathUtils
+
+
+print()
+print("<<< Move down >>>")
+
+
+def moveDown(selections):
+
+    jobObj = PathUtils.findParentJob(selections[0])
+    if not jobObj:
+        return "    Selection incorrect"
+
+    jobOpGroup = jobObj.Operations.Group
+    for sel in selections:
+        if sel not in jobOpGroup:
+            return "    Selection incorrect"
+
+    operations = [op.Label for op in selections]
+    print(f"    {", ".join(map(str,operations))}")
+
+    indexList = []
+    for sel in selections:
+        indexList.append(jobOpGroup.index(sel))
+
+    newList = list(jobOpGroup)
+
+    limitIndex = 0
+    for index in sorted(indexList, reverse=True):
+        limitIndex += 1
+        if index < len(jobOpGroup) - limitIndex:
+            sel = jobOpGroup[index]
+            newList.pop(index)
+            newList.insert(index+1, sel)
+
+    jobObj.Operations.removeObjects(jobOpGroup)
+    jobObj.Operations.addObjects(newList)
+
+    doc.recompute()
+
+
+doc = FreeCAD.ActiveDocument
+selections = FreeCADGui.Selection.getSelection()
+output = moveDown(selections)
+if output:
+    print(output)
