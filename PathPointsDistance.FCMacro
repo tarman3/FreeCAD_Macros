@@ -1,0 +1,46 @@
+print()
+print('<<<<< Macro mesasure distance between nodes >>>>>')
+
+import re
+import FreeCAD
+
+
+def getVector(string):
+    x = re.search(r'X-?\d+(,\d+)?', string, re.IGNORECASE).group()[1:]
+    x = float(x.replace(",", "."))
+    y = re.search(r'Y-?\d+(,\d+)?', string, re.IGNORECASE).group()[1:]
+    y = float(y.replace(",", "."))
+    z = re.search(r'Z-?\d+(,\d+)?', string, re.IGNORECASE).group()[1:]
+    z = float(z.replace(",", "."))
+    return FreeCAD.Vector(x, y, z)
+
+
+def run(selection):
+    if len(selection[0].SubElementNames) != 2:
+        return "    Errror selection"
+
+    base = [(selection[0].Object, selection[0].SubElementNames)]
+
+    path = base[0][1]
+
+    c1 = path[0]
+    v1 = getVector(c1)
+    print("    path1   ", c1, "  ", v1)
+
+    c2 = path[-1]
+    v2 = getVector(c2)
+    print("    path2   ", c2, "  ", v2)
+
+    distance = v1.distanceToPoint(v2)
+    distanceX = FreeCAD.Vector(v1.x,0,0).distanceToPoint(FreeCAD.Vector(v2.x, 0, 0))
+    distanceY = FreeCAD.Vector(0, v1.y,0).distanceToPoint(FreeCAD.Vector(0, v2.y, 0))
+    distanceZ = FreeCAD.Vector(0, 0, v1.z).distanceToPoint(FreeCAD.Vector(0, 0, v2.z))
+
+
+    return f"    \ndistance  = {distance}\ndistanceX = {distanceX}\ndistanceY = {distanceY}\ndistanceZ = {distanceZ}"
+
+
+selection = FreeCADGui.Selection.getSelectionEx()
+output = run(selection)
+print()
+print(output)
