@@ -6,18 +6,22 @@ import FreeCAD
 
 
 def getVector(string):
-    x = re.search(r'X-?\d+(,\d+)?', string, re.IGNORECASE).group()[1:]
-    x = float(x.replace(",", "."))
-    y = re.search(r'Y-?\d+(,\d+)?', string, re.IGNORECASE).group()[1:]
-    y = float(y.replace(",", "."))
-    z = re.search(r'Z-?\d+(,\d+)?', string, re.IGNORECASE).group()[1:]
-    z = float(z.replace(",", "."))
+    x = re.search(r'X-?\d+(,\d+)?', string, re.IGNORECASE)
+    y = re.search(r'Y-?\d+(,\d+)?', string, re.IGNORECASE)
+    z = re.search(r'Z-?\d+(,\d+)?', string, re.IGNORECASE)
+
+    if not x or not y or not z:
+        return None
+
+    x = float(x.group()[1:].replace(",", "."))
+    y = float(y.group()[1:].replace(",", "."))
+    z = float(z.group()[1:].replace(",", "."))
     return FreeCAD.Vector(x, y, z)
 
 
 def run(selection):
     if len(selection[0].SubElementNames) != 2:
-        return "    Errror selection"
+        return "    Errror selection. Please select two elements from one Path in 3d-View"
 
     base = [(selection[0].Object, selection[0].SubElementNames)]
 
@@ -25,10 +29,13 @@ def run(selection):
 
     c1 = path[0]
     v1 = getVector(c1)
-    print("    path1   ", c1, "  ", v1)
+    if not v1: return "First element not contain all coordinates"
 
     c2 = path[-1]
     v2 = getVector(c2)
+    if not v2: return "Second element not contain all coordinates"
+
+    print("    path1   ", c1, "  ", v1)
     print("    path2   ", c2, "  ", v2)
 
     distance = v1.distanceToPoint(v2)
@@ -42,5 +49,4 @@ def run(selection):
 
 selection = FreeCADGui.Selection.getSelectionEx()
 output = run(selection)
-print()
 print(output)

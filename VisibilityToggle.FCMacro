@@ -105,22 +105,23 @@ for selEx in selExList:
     objSel = selEx.Object
     sub = selEx.SubElementNames[0] if selEx.SubElementNames else ""
     subObj = objSel.getSubObject(sub, 1)
-    # print()
-    # print()
-    # print('    >>>> selEx.SubElementNames', selEx.SubElementNames[0])
-    # print('    >>>> objSel', objSel, objSel.TypeId, objSel.Name)
-    # print('    >>>> subObj', subObj, subObj.TypeId, subObj.Name)
+    print(f'    sub     {sub}')
+    print(f'    objSel  {objSel}  TypeId={objSel.TypeId}  Name={objSel.Name}')
+    print(f'    subObj  {subObj}  TypeId={subObj.TypeId}  Name={subObj.Name}')
 
+    # If selected element inside Part container
     if objSel.TypeId == 'App::Part' and subObj.TypeId != 'App::Part':
+        sub = sub.strip('.')
         for i in sub.split('.')[::-1]:
+            print(f'    {i}')
             if 'Body' in i or 'Link' in i:
                 objName = i
+                objSel = doc.getObject(objName)
                 break
-        objSel = doc.getObject(objName)
 
-    # print()
-    # print('    >>>> objSel', objSel, objSel.TypeId, objSel.Name)
-    # print('    >>>> subObj', subObj, subObj.TypeId, subObj.Name)
+    print()
+    print(f'    objSel  {objSel}  TypeId={objSel.TypeId}  Name={objSel.Name}')
+    print(f'    subObj  {subObj}  TypeId={subObj.TypeId}  Name={subObj.Name}')
 
     recDepth = 0
 
