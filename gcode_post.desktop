@@ -1,0 +1,37 @@
+[Desktop Entry]
+Type=Service
+MimeType=text/*;
+Actions=A1X;B1X;Mach3;Universal;ArcWelder;ArcStraightener
+X-KDE-Submenu=Gcode
+X-KDE-Priority=TopLevel
+
+
+[Desktop Action Universal]
+Name=Universal
+Icon=
+Exec=~/.local/share/kio/servicemenus/gcode_post.py --suffix='_postU' --removeG0X0Y0 %F
+
+[Desktop Action A1X]
+Name=A1X
+Icon=
+Exec=~/.local/share/kio/servicemenus/gcode_post.py --threshold=10 --repeats=50 --skiphead --replaceStartZ=100 --suffix='_postA1X' --removeG0X0Y0 %F
+
+[Desktop Action B1X]
+Name=B1X
+Icon=
+Exec=~/.local/share/kio/servicemenus/gcode_post.py --threshold=10 --repeats=25 --skiphead --replaceStartZ=100 --suffix='_postB1X' --removeG0X0Y0 %F
+
+[Desktop Action Mach3]
+Name=Mach3
+Icon=
+Exec=~/.local/share/kio/servicemenus/gcode_post.py --threshold=10 --repeats=1 --suffix='_postMach3' --removeG0X0Y0 %F
+
+[Desktop Action ArcWelder]
+Name=ArcWelder
+Icon=
+Exec=for path in %F; do in=$path; name="${in%.*}"; ext="${in##*.}"; out=${name}_arcW.${ext}; $HOME/app/ArcWelder --resolution-mm=0.1 --allow-3d-arcs "$in" "$out"; done
+
+[Desktop Action ArcStraightener]
+Name=ArcStraightener
+Icon=
+Exec=for path in %F; do in=$path; name="${in%.*}"; ext="${in##*.}"; out=${name}_arcS.${ext}; $HOME/app/ArcStraightener "$in" "$out"; done
