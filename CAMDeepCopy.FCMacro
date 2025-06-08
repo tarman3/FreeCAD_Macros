@@ -1,0 +1,68 @@
+# Macro to deep copy of Path operarion and set expressions
+# Can process Dressup
+
+import FreeCAD
+import FreeCADGui
+from PathScripts.PathUtils import findParentJob
+from PathScripts.PathUtils import addToJob
+
+
+def getRecursiveOperationsList(obj):
+    if not hasattr(obj, "Base"):
+        return None
+    if obj.isDerivedFrom("Path::Feature"):
+        tree.append(obj)
+        return getRecursiveOperationsList(obj.Base)
+    else:
+        return None
+
+def setProperties(newObj, origObj):
+    for property in newObj.PropertiesList:
+        if property == "Label":
+            newObj.Label = f"{origObj.Name}_expCopy"
+
+        # Do not change properties in list below
+        elif property not in [
+            "Active",
+            "AreaParams",
+            "Base",
+            "CycleTime",
+            "_ElementMapVersion",
+            "ExpressionEngine",
+            "PathParams",
+            "removalshape"
+            ]:
+            expression = f"{origObj.Name}.{property}"
+            newObj.setExpression(property, expression)
+
+print()
+print("<<< Macro to deep copy of Path operarion and set expressions >>>")
+
+selection = FreeCADGui.Selection.getSelection()
+if len(selection) == 0:
+    print("    Nothing selected")
+
+else:
+    obj = selection[0]
+    print(f"    Selected operation: {obj.Name}")
+    tree = []
+    getRecursiveOperationsList(obj)
+    print(f"    Recursive list of operations: {[op.Name for op in tree]}")
+
+    job = findParentJob(obj)
+
+    temp = None
+    for i, obj in enumerate(reversed(tree)):
+        newObj = FreeCAD.ActiveDocument.copyObject(obj, False)
+        setProperties(newObj, obj)
+
+        if i > 0:
+            newObj.Base = temp
+
+        if i == len(tree) - 1:
+            addToJob(newObj, job.Name)
+            break
+
+        temp = newObj
+
+
