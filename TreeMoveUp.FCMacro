@@ -1,43 +1,42 @@
-# Macro to move up selected operations in Job Operations group
+# Macro to move up selected objects in group
 
-import Path
-import PathScripts.PathUtils as PathUtils
-
+import FreeCAD
+import FreeCADGui
 
 print()
-print("<<< Move down >>>")
+print("<<< Move up >>>")
 
 
 def moveUp(selections):
 
-    jobObj = PathUtils.findParentJob(selections[0])
-    if not jobObj:
+    groupInList = selections[0].InList
+    if len(groupInList) == 0:
         return "    Selection incorrect"
 
-    jobOpGroup = jobObj.Operations.Group
+    groupObj = groupInList[0]
     for sel in selections:
-        if sel not in jobOpGroup:
+        if sel not in groupObj.Group:
             return "    Selection incorrect"
 
     operations = [op.Label for op in selections]
-    print(f"    {", ".join(map(str,operations))}")
+    print(f"    {", ".join(map(str, operations))}")
 
     indexList = []
     for sel in selections:
-        indexList.append(jobOpGroup.index(sel))
+        indexList.append(groupObj.Group.index(sel))
 
-    newList = list(jobOpGroup)
+    newList = list(groupObj.Group)
 
     limitIndex = 0
     for index in sorted(indexList, reverse=False):
         limitIndex += 1
         if index >= limitIndex:
-            sel = jobOpGroup[index]
+            sel = groupObj.Group[index]
             newList.pop(index)
             newList.insert(index-1, sel)
 
-    jobObj.Operations.removeObjects(jobOpGroup)
-    jobObj.Operations.addObjects(newList)
+    groupObj.removeObjects(groupObj.Group)
+    groupObj.addObjects(newList)
 
     doc.recompute()
 
