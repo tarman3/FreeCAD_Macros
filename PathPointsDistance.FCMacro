@@ -1,52 +1,103 @@
-print()
-print('<<<<< Macro mesasure distance between nodes >>>>>')
-
-import re
 import FreeCAD
+import FreeCADGui
 
 
-def getVector(string):
-    x = re.search(r'X-?\d+(,\d+)?', string, re.IGNORECASE)
-    y = re.search(r'Y-?\d+(,\d+)?', string, re.IGNORECASE)
-    z = re.search(r'Z-?\d+(,\d+)?', string, re.IGNORECASE)
+print()
+print('<<<<< Macro measure distance between Path nodes >>>>>')
 
-    if not x or not y or not z:
-        return None
 
-    x = float(x.group()[1:].replace(",", "."))
-    y = float(y.group()[1:].replace(",", "."))
-    z = float(z.group()[1:].replace(",", "."))
-    return FreeCAD.Vector(x, y, z)
+def getNextPosition(pathObj, cmdNum):
+    # Get next position from Path object
+    x = None
+    y = None
+    z = None
+    for i in reversed(range(0, cmdNum)):
+        cmd = pathObj.Commands[i]
+        x = round(cmd.x,3) if x is None and cmd.x else x
+        y = round(cmd.y,3) if y is None and cmd.y else y
+        z = round(cmd.z,3) if z is None and cmd.z else z
+        if x is not None and y is not None and z is not None:
+            return FreeCAD.Vector(x, y, z)
+    errorAxis = []
+    if x is None:
+        errorAxis.append("x")
+    if y is None:
+        errorAxis.append("y")
+    if z is None:
+        errorAxis.append("z")
+    print(f"  Path object do not contain movements {','.join(errorAxis)} before line {cmdNum}")
+    return None
 
+def getPointVertex(obj, vertName):
+    vertexNum = int(vertName.replace("Vertex", "")) - 1
+    point = obj.Shape.Vertexes[vertexNum].Point
+    return point
+
+def getPointsEdge(obj, edgeName):
+    edgeNum = int(edgeName.replace("Edge", "")) - 1
+    edge = obj.Shape.Edges[edgeNum]
+    vertexes = edge.Vertexes
+    points = [pt.Point for pt in vertexes]
+    return points
 
 def run(selection):
-    if len(selection[0].SubElementNames) != 2:
-        return "    Errror selection. Please select two elements from one Path in 3d-View"
+    mode = "point-point"
+    points = []
+    counter = 0
+    for sel in reversed(selection):
+        obj = sel.Object
+        subName = sel.SubElementNames
+        if obj.isDerivedFrom("Path::Feature"):
+            for cmd in subName:
+                cmdNum = int(cmd.split()[0])
+                point = getNextPosition(obj.Path, cmdNum)
+                if point is None:
+                    return f"  Can not determine coordinates from Path: {obj.Name} - {cmd}"
+                else:
+                    print(f"  {point} - {obj.Label} - {cmd}")
+                    points.append(point)
+                    counter += 1
 
-    base = [(selection[0].Object, selection[0].SubElementNames)]
+        elif obj.isDerivedFrom("Part::Feature"):
+            for elementName in subName:
+                if "Vertex" in elementName:
+                    point = getPointVertex(obj, elementName)
+                    print(f"  {point} - {obj.Label} - {elementName}")
+                    points.append(point)
+                    counter += 1
+                if "Edge" in elementName:
+                    mode = "point-line"
+                    edgePoints = getPointsEdge(obj, elementName)
+                    points.append(edgePoints)
+                    print(f"  {edgePoints} - {obj.Label} - {elementName}")
 
-    path = base[0][1]
+        if len(points) == 2 and mode == "point-point":
+            point1 = points[0]
+            point2 = points[1]
+            distanceX = round(point1.x - point2.x, 3)
+            distanceY = round(point1.y - point2.y, 3)
+            distanceZ = round(point1.z - point2.z, 3)
+            distance  = round(point1.distanceToPoint(point2), 3)
+            point1.z = 0
+            point2.z = 0
+            distanceXY = round(point1.distanceToPoint(point2), 3)
+            return f"  dxyz={distance:.3f}  dxy={distanceXY:.3f}  dx={distanceX:.3f}  dy={distanceY:.3f}  dz={distanceZ:.3f}"
 
-    c1 = path[0]
-    v1 = getVector(c1)
-    if not v1: return "First element not contain all coordinates"
+        elif len(points) == 2 and mode == "point-line":
+            for point in points:
+                if isinstance(point, list):
+                    base = point[0]
+                    dir = point[1] - point[0]
+                else:
+                    point1 = point
+            distance = round(point1.distanceToLine(base, dir))
+            return f"  dxy={distance:.3f}"
 
-    c2 = path[-1]
-    v2 = getVector(c2)
-    if not v2: return "Second element not contain all coordinates"
-
-    print("    path1   ", c1, "  ", v1)
-    print("    path2   ", c2, "  ", v2)
-
-    distance = v1.distanceToPoint(v2)
-    distanceX = FreeCAD.Vector(v1.x,0,0).distanceToPoint(FreeCAD.Vector(v2.x, 0, 0))
-    distanceY = FreeCAD.Vector(0, v1.y,0).distanceToPoint(FreeCAD.Vector(0, v2.y, 0))
-    distanceZ = FreeCAD.Vector(0, 0, v1.z).distanceToPoint(FreeCAD.Vector(0, 0, v2.z))
-
-
-    return f"    \ndistance  = {distance}\ndistanceX = {distanceX}\ndistanceY = {distanceY}\ndistanceZ = {distanceZ}"
+    # print(f"  mode={mode}  points={points}")
+    return "  Errror selection. Please select two Path elements in 3d-View"
 
 
 selection = FreeCADGui.Selection.getSelectionEx()
 output = run(selection)
+print()
 print(output)
