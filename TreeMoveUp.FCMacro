@@ -8,35 +8,39 @@ print("<<< Move up >>>")
 
 
 def moveUp(selections):
+    if not selections:
+        return "    Error 1: Selection is empty"
 
-    groupInList = selections[0].InList
-    if len(groupInList) == 0:
-        return "    Selection incorrect"
+    if len(selections[0].InList) == 0:
+        return "    Error 2: Selection not in group"
 
-    groupObj = groupInList[0]
+    groups = [grp for grp in selections[0].InList if grp.TypeId == "App::DocumentObjectGroup"]
+
+    if len(groups) == 1:
+        group = groups[0]
+    else:
+        return "    Error 3: Can not determine group"
+
     for sel in selections:
-        if sel not in groupObj.Group:
-            return "    Selection incorrect"
+        if sel not in group.Group:
+            return "    Error 4: Elements in different groups"
 
-    operations = [op.Label for op in selections]
-    print(f"    {", ".join(map(str, operations))}")
+    objects = [sel.Label for sel in selections]
+    print(f"    {", ".join(map(str, objects))}")
 
-    indexList = []
-    for sel in selections:
-        indexList.append(groupObj.Group.index(sel))
+    indexList = [group.Group.index(sel) for sel in selections]
 
-    newList = list(groupObj.Group)
+    newList = list(group.Group)
 
     limitIndex = 0
     for index in sorted(indexList, reverse=False):
         limitIndex += 1
         if index >= limitIndex:
-            sel = groupObj.Group[index]
+            sel = group.Group[index]
             newList.pop(index)
             newList.insert(index-1, sel)
 
-    groupObj.removeObjects(groupObj.Group)
-    groupObj.addObjects(newList)
+    group.Group = newList
 
     doc.recompute()
 
