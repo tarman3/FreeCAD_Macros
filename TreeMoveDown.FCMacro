@@ -1,4 +1,9 @@
-# Macro to move down selected objects in group
+# -*- coding: utf-8 -*-
+
+__title__ = "Move down selected objects in group"
+__doc__ = ""
+__url__ = "https://forum.freecad.org/viewtopic.php?t=97244"
+
 
 import FreeCAD
 import FreeCADGui

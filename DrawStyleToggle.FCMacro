@@ -1,4 +1,8 @@
-# Macro to toggle draw style selected objects
+
+__title__ = "Toggle draw style selected objects"
+__doc__ = "Toggle between Normal, Transparency and Wireframe draw styles"
+__url__ = "https://forum.freecad.org/viewtopic.php?t=94590"
+# Macro to
 
 
 transparency = 50

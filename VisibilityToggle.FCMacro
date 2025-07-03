@@ -1,17 +1,9 @@
-"""
-Macro to toggle visibility any object, especially Job objects from CAM workbench and its contents
+# -*- coding: utf-8 -*-
 
-2025-02-08 16:00 Toggle Body if only one element visible
-2025-02-14 14:57 Little improvements for Links, Part and Assembly
+__title__ = "Toggle visibility"
+__doc__ = "Useful for Job objects from CAM workbench and its contents"
+__url__ = "https://forum.freecad.org/viewtopic.php?t=94541"
 
-https://forum.freecad.org/viewtopic.php?t=94541
-https://github.com/FreeCAD/FreeCAD/issues/12453
-https://github.com/FreeCAD/FreeCAD/issues/16005
-
-https://wiki.freecad.org/Std_ToggleVisibility
-https://wiki.freecad.org/PropertyLink:_InList_and_OutList
-https://wiki.freecad.org/Selection_API
-"""
 
 # Job parameters
 JobHidebaseObject = True   # Hide Object body while hidden Job

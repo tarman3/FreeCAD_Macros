@@ -1,5 +1,9 @@
-# Macro to remove transparency from selected objects
-#If you need to process all objects in document, press CTRL+A and run the Macro
+# -*- coding: utf-8 -*-
+
+__title__ = "Remove transparency from selected objects"
+__doc__ = "To process all objects in document, press CTRL+A and run the Macro"
+__url__ = ""
+
 
 def main(obj):
     vobj = obj.ViewObject

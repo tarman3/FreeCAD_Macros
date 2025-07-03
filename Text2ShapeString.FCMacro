@@ -1,3 +1,11 @@
+
+# -*- coding: utf-8 -*-
+
+__title__ = "Convert text to ShapeString"
+__doc__ = ""
+__url__ = "https://forum.freecad.org/viewtopic.php?t=94388"
+
+
 import FreeCAD as App
 import Draft
 

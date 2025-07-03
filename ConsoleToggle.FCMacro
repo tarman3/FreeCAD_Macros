@@ -1,11 +1,8 @@
-'''
-Macros to toggle panels Python console and Report view
-2025-02-07
 
-Based on:
-https://forum.freecad.org/viewtopic.php?t=81537
-https://forum.freecad.org/viewtopic.php?t=30450
-'''
+__title__ = "Toggle panels Python console and Report view"
+__doc__ = "Selected objects sent to console and can be accessed by variables obj and objs"
+__url__ = "https://forum.freecad.org/viewtopic.php?t=94589"
+
 
 from PySide import QtGui
 

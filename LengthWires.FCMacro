@@ -1,4 +1,8 @@
-# Calculate length of selected wires
+
+__title__ = "Calculate length of selected wires"
+__doc__ = ""
+__url__ = ""
+
 
 objList = FreeCADGui.Selection.getSelection()
 

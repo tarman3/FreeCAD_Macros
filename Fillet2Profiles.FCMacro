@@ -1,9 +1,8 @@
-'''
-Macro to create gcode forprocessing fillet by BallEnd mill
-2025-02-19 14:20
 
-https://forum.freecad.org/viewtopic.php?t=94642
-'''
+__title__ = "Create gcode for processing fillet by BallEnd mill"
+__doc__ = ""
+__url__ = "https://forum.freecad.org/viewtopic.php?t=94642"
+
 
 print('\n------- Macro to create gcode for processing fillet by BallEnd mill')
 

@@ -1,12 +1,14 @@
-"""
-https://forum.freecad.org/viewtopic.php?t=92512
 
-A script I've been working on.It installs an event filter to intercept/modify mousewheel-arrowkey events for Qspinboxes. its ugly but seems to work ok.
+__title__ = "Modify mousewheel-arrowkey events for Qspinboxes"
+__doc__ = "Change the text in the Qspinbox to 'stop' to quit the script"
+__url__ = "https://forum.freecad.org/viewtopic.php?t=92512"
+
+"""
 SHIFT scrolls by 0.1
 SHIFT+CONTROL by 0.05
 CONTROL by 10
-change the text in the Qspinbox to "stop" to quit the script
 """
+
 
 from PySide import QtWidgets,QtGui,QtCore
 import os,FreeCAD,FreeCADGui,string

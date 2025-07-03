@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 
-# ------------ Export STP model to PrusaSlicer ------------
+__title__ = "Export STP model to PrusaSlicer"
+__doc__ = ""
+__url__ = "https://forum.freecad.org/viewtopic.php?t=95867"
+
 
 slicer_path = 'prusa-slicer' # Path to slicer
 
 save_to_temp = True    # Save STP to temp folder
 #save_to_temp = False  # Save STP near FCStd
 
-# ---------------------------------------------------------
 
 import ImportGui
 import os

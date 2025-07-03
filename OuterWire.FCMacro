@@ -1,3 +1,8 @@
+
+__title__ = "Create outer wire"
+__doc__ = ""
+__url__ = ""
+
 import TechDraw
 import Part
 

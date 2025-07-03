@@ -1,4 +1,8 @@
-# Set random color for selected objects
+
+__title__ = "Set random color for selected objects"
+__doc__ = ""
+__url__ = "https://forum.freecad.org/viewtopic.php?t=93991"
+
 
 import random
 

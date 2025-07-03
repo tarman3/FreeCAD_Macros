@@ -1,3 +1,9 @@
+
+__title__ = "Measure distance between Path nodes "
+__doc__ = "Select Path or Vertex or Line elements and get distance between nodes"
+__url__ = "https://forum.freecad.org/viewtopic.php?t=97759"
+
+
 import FreeCAD
 import FreeCADGui
 

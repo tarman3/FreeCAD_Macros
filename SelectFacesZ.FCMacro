@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+
+__title__ = "Select faces with equal Z"
+__doc__ = ""
+__url__ = "https://forum.freecad.org/viewtopic.php?t=96486"
+
+
 print()
 print(f'<<< Macro selecting faces with equal Z >>>')
 

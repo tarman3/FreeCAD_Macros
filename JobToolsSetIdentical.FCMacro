@@ -1,4 +1,8 @@
-# Macro to set identical Tool Controller for all operations in Job
+
+__title__ = "Set identical Tool Controller for all operations in Job"
+__doc__ = ""
+__url__ = ""
+
 
 print()
 print('<<< Macro to set identical Tool Controller >>>')

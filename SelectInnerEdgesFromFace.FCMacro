@@ -1,3 +1,11 @@
+
+# -*- coding: utf-8 -*-
+
+__title__ = "Select inner edges from face"
+__doc__ = ""
+__url__ = "https://forum.freecad.org/viewtopic.php?t=98065"
+
+
 print()
 print(f"<<< Macro selecting inner edges from face >>>")
 

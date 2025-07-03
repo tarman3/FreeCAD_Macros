@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+
+__title__ = "Rectangle Trimex"
+__doc__ = ""
+__url__ = "https://forum.freecad.org/viewtopic.php?t=94761"
+
+
 from PySide import QtCore
 import FreeCADGui as Gui
 
