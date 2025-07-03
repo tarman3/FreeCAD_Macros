@@ -1,0 +1,20 @@
+print()
+print(f"<<< Macro selecting all edges from object >>>")
+
+
+def main(sel):
+    lastIndex = len(sel.Shape.Edges) - 1
+    print(f"    Found {lastIndex + 1} edges in object {sel.Label}")
+
+    for index in range(lastIndex + 1):
+        Gui.Selection.addSelection(sel, str("Edge" + str(index + 1)))
+
+
+selection = FreeCADGui.Selection.getSelection()
+Gui.Selection.clearSelection()
+
+if selection:
+    for sel in selection:
+        main(sel)
+else:
+    print(f'    Nothing selected')
