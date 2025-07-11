@@ -1,0 +1,28 @@
+
+__title__ = "Select all edges from face"
+__doc__ = ""
+__author__ = "OpenSource CNC"
+__url__ = "https://www.patreon.com/collection/657672"
+
+
+sel = Gui.Selection.getSelectionEx()[0]
+obj = sel.Object
+face, = sel.SubObjects
+Gui.Selection.clearSelection()
+hits = []
+Edge = 'Edge{}'.format
+objEdges = tuple(obj.Shape.Edges)
+
+for fe in face.Edges:
+    feisEqual = fe.isEqual
+    for i, edge in enumerate(objEdges, start=1):
+        if feisEqual(edge):
+            hits.append(Edge(i))
+            break
+
+        edge.reverse()
+        if feisEqual(edge):
+            hits.append(Edge(i))
+            break
+
+Gui.Selection.addSelection(obj, hits)

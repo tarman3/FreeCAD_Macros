@@ -1,0 +1,106 @@
+
+__title__ = "Select connected wires"
+__doc__ = ""
+__author__ = "OpenSource CNC"
+__url__ = "https://www.patreon.com/collection/657672"
+
+
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from collections import deque, defaultdict
+
+TOL = 1e-6
+
+def edge_vector(edge):
+    return edge.Vertexes[1].Point.sub(edge.Vertexes[0].Point)
+
+def get_midpoint(edge):
+    return (edge.Vertexes[0].Point.add(edge.Vertexes[1].Point)).multiply(0.5)
+
+def get_plane_from_two_edges(edge1, edge2):
+    v1 = edge_vector(edge1)
+    v2 = edge_vector(edge2)
+    normal = v1.cross(v2)
+    if normal.Length < TOL:
+        return None, None
+    return normal.normalize(), get_midpoint(edge1)
+
+def is_edge_in_plane(edge, normal, point_on_plane):
+    for vert in edge.Vertexes:
+        vec = vert.Point.sub(point_on_plane)
+        if abs(vec.dot(normal)) > TOL:
+            return False
+    return True
+
+def build_vertex_edge_map(edges):
+    vmap = defaultdict(set)
+    for i, edge in enumerate(edges):
+        for v in edge.Vertexes:
+            vkey = tuple(v.Point)
+            vmap[vkey].add(i)
+    return vmap
+
+def get_connected_edges(edge_idx, vertex_edge_map, edge):
+    connected = set()
+    for v in edge.Vertexes:
+        vkey = tuple(v.Point)
+        connected |= vertex_edge_map[vkey]
+    connected.discard(edge_idx)
+    return connected
+
+def select_connected_coplanar_edges():
+    sel = Gui.Selection.getSelectionEx()
+    if not sel or len(sel) == 0:
+        App.Console.PrintError("No edges selected.\n")
+        return
+
+    edge_refs = []
+    for s in sel:
+        for sub in s.SubElementNames:
+            if sub.startswith("Edge"):
+                idx = int(sub[4:]) - 1
+                edge_refs.append((s.Object, idx))
+
+    if len(edge_refs) < 2:
+        App.Console.PrintError("Please select at least two edges.\n")
+        return
+
+    obj = edge_refs[0][0]
+    edges = obj.Shape.Edges
+    edge1 = edges[edge_refs[0][1]]
+    edge2 = edges[edge_refs[1][1]]
+
+    normal, point_on_plane = get_plane_from_two_edges(edge1, edge2)
+    if normal is None:
+        App.Console.PrintError("Could not determine a valid plane from the selected edges.\n")
+        return
+
+    # Build edge map
+    vertex_edge_map = build_vertex_edge_map(edges)
+
+    visited = set()
+    queue = deque()
+
+    # Start with all user-selected edges
+    for ref in edge_refs:
+        idx = ref[1]
+        queue.append(idx)
+        visited.add(idx)
+
+    while queue:
+        current_idx = queue.popleft()
+        current_edge = edges[current_idx]
+
+        for i in get_connected_edges(current_idx, vertex_edge_map, current_edge):
+            if i not in visited and is_edge_in_plane(edges[i], normal, point_on_plane):
+                visited.add(i)
+                queue.append(i)
+
+    Gui.Selection.clearSelection()
+    for i in visited:
+        Gui.Selection.addSelection(obj, f"Edge{i+1}")
+
+    App.Console.PrintMessage(f"Selected {len(visited)} connected coplanar edges.\n")
+
+select_connected_coplanar_edges()

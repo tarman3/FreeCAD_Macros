@@ -1,0 +1,116 @@
+
+__title__ = "Select connected vertical faces"
+__doc__ = ""
+__author__ = "OpenSource CNC"
+__url__ = "https://www.patreon.com/collection/657672"
+
+
+"""
+A macro to select all the connected vertical faces
+Uuseful for creating pocket operations for holes that don't have a bottom face.
+
+You need to select a vertical face and run the macro
+It will detect and add to the selection all the vertical faces that are connected to the initial one
+"""
+
+
+import FreeCAD
+import FreeCADGui
+import Part
+
+TOLERANCE = 0.01
+SAMPLE_POINTS = 5
+
+def is_vertical(face, cache={}):
+    if face in cache:
+        return cache[face]
+
+    if face.Surface.isPlanar():
+        normal = face.normalAt(0, 0)
+        result = abs(normal.z) < TOLERANCE
+    else:
+        umin, umax, vmin, vmax = face.ParameterRange
+        vertical_count = 0
+        total = 0
+        for i in range(SAMPLE_POINTS):
+            for j in range(SAMPLE_POINTS):
+                u = umin + (umax - umin) * i / (SAMPLE_POINTS - 1)
+                v = vmin + (vmax - vmin) * j / (SAMPLE_POINTS - 1)
+                try:
+                    normal = face.normalAt(u, v)
+                    if abs(normal.z) < TOLERANCE:
+                        vertical_count += 1
+                    total += 1
+                except:
+                    continue
+        result = (vertical_count / total) > 0.7 if total > 0 else False
+
+    cache[face] = result
+    return result
+
+def build_connectivity_map(faces):
+    edge_to_faces = {}
+
+    for idx, face in enumerate(faces):
+        for edge in face.Edges:
+            key = edge.hashCode(int(1e-6))
+            edge_to_faces.setdefault(key, set()).add(idx)
+
+    face_neighbors = {i: set() for i in range(len(faces))}
+    for indices in edge_to_faces.values():
+        for i in indices:
+            face_neighbors[i].update(indices - {i})
+
+    return face_neighbors
+
+def collect_connected_vertical_faces(start_indices, all_faces, face_neighbors):
+    visited = set()
+    result = set()
+    to_visit = list(start_indices)
+
+    while to_visit:
+        idx = to_visit.pop()
+        if idx in visited:
+            continue
+        visited.add(idx)
+
+        face = all_faces[idx]
+        if is_vertical(face):
+            result.add(idx)
+            to_visit.extend(face_neighbors[idx] - visited)
+
+    return result
+
+def run():
+    sel = FreeCADGui.Selection.getSelectionEx()
+    if not sel or not any(s.HasSubObjects for s in sel):
+        FreeCAD.Console.PrintError("Select one or more faces to start from.\n")
+        return
+
+    obj = sel[0].Object
+    all_faces = obj.Shape.Faces
+
+    # Find indices of all selected faces
+    start_indices = []
+    for s in sel:
+        for subobj in s.SubObjects:
+            if isinstance(subobj, Part.Face):
+                for i, face in enumerate(all_faces):
+                    if face.isSame(subobj):
+                        start_indices.append(i)
+                        break
+
+    if not start_indices:
+        FreeCAD.Console.PrintError("No valid selected faces found.\n")
+        return
+
+    face_neighbors = build_connectivity_map(all_faces)
+    vertical_faces = collect_connected_vertical_faces(start_indices, all_faces, face_neighbors)
+
+    FreeCADGui.Selection.clearSelection()
+    for i in vertical_faces:
+        FreeCADGui.Selection.addSelection(obj, f"Face{i+1}")
+
+    FreeCAD.Console.PrintMessage(f"Selected {len(vertical_faces)} connected vertical faces.\n")
+
+run()

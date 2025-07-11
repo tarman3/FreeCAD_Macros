@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+
+__title__ = "Colorize points by Z"
+__doc__ = ""
+__url__ = ""
+
+
 import Draft
 
 textHeight = 3      # Percent from max Size 

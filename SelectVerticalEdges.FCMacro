@@ -1,0 +1,114 @@
+
+__title__ = "Select vertical edges connected by vertical faces"
+__doc__ = "Select one vertical face and run the macro"
+__author__ = "OpenSource CNC"
+__url__ = "https://www.patreon.com/collection/657672"
+
+"""
+Macro for selecting all vertical edges that are connected by vertical faces.
+Extremely useful when you want to add a chamfer to all corners,
+such as when you need to do this for inlays in the cam workbench.
+
+Usage: Select one vertical face and run the macro.
+All the vertical edges that are connected through vertical faces will become selected
+"""
+
+
+import FreeCAD
+import FreeCADGui
+from FreeCAD import Vector
+from collections import defaultdict
+from PySide import QtWidgets
+
+def show_error_popup(message):
+    msgBox = QtWidgets.QMessageBox()
+    msgBox.setIcon(QtWidgets.QMessageBox.Critical)
+    msgBox.setWindowTitle("Error!")
+    msgBox.setText(message)
+    msgBox.exec_()
+	
+def is_vertical(edge, tol=1e-6):
+    """Check if an edge is vertical (Z-axis aligned)."""
+    start = edge.Vertexes[0].Point
+    end = edge.Vertexes[-1].Point
+    direction = end.sub(start)
+
+    if direction.Length < tol:
+        return False
+
+    direction = direction.normalize()
+    return abs(direction.x) < tol and abs(direction.y) < tol and abs(abs(direction.z) - 1.0) < tol
+
+def vector_key(v, tol=1e-6):
+    """Convert Vector to hashable rounded tuple."""
+    return (round(v.x / tol) * tol, round(v.y / tol) * tol, round(v.z / tol) * tol)
+
+def build_edge_connectivity(edges):
+    """Create graph: edge index -> connected edge indices."""
+    vertex_to_edges = defaultdict(set)
+    for i, edge in enumerate(edges):
+        for v in edge.Vertexes:
+            vertex_to_edges[vector_key(v.Point)].add(i)
+
+    edge_graph = defaultdict(set)
+    for connected_edges in vertex_to_edges.values():
+        edge_list = list(connected_edges)
+        for i in range(len(edge_list)):
+            for j in range(i + 1, len(edge_list)):
+                edge_graph[edge_list[i]].add(edge_list[j])
+                edge_graph[edge_list[j]].add(edge_list[i])
+
+    return edge_graph
+
+def select_connected_vertical_edges():
+    sel = FreeCADGui.Selection.getSelectionEx()
+    if not sel:
+        show_error_popup(str("Please select at least one edge!"))
+        return
+
+    # Use the first selected object
+    obj = sel[0].Object
+    all_edges = obj.Shape.Edges
+
+    vertical_edges = set(i for i, e in enumerate(all_edges) if is_vertical(e))
+    edge_graph = build_edge_connectivity(all_edges)
+
+    # Collect selected edge indices
+    selected_edge_indices = set()
+    for s in sel:
+        if s.Object != obj:
+            show_error_popup(str("Multiple objects selected — only the first will be used."))
+            continue
+        for subname in s.SubElementNames:
+            if subname.startswith("Edge"):
+                idx = int(subname[4:]) - 1
+                if 0 <= idx < len(all_edges):
+                    selected_edge_indices.add(idx)
+
+    if not selected_edge_indices:
+        show_error_popup(str("No valid edges selected."))
+        return
+
+    # Traverse all connected edges from selected ones
+    visited = set()
+    stack = list(selected_edge_indices)
+
+    while stack:
+        current = stack.pop()
+        if current in visited:
+            continue
+        visited.add(current)
+        stack.extend(edge_graph[current] - visited)
+
+    # From visited, keep only vertical edges
+    result_edges = vertical_edges.intersection(visited)
+
+    if not result_edges:
+        show_error_popup(str("No connected vertical edges found."))
+    else:
+        FreeCADGui.Selection.clearSelection()
+        for i in sorted(result_edges):
+            FreeCADGui.Selection.addSelection(obj, f"Edge{i+1}")
+        FreeCAD.Console.PrintMessage(f"Selected {len(result_edges)} connected vertical edge(s).\n")
+
+select_connected_vertical_edges()

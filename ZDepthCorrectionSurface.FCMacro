@@ -1,0 +1,19 @@
+
+__title__ = "Add Face as Guide to ZDepthCorrection"
+__doc__ = "Select ZCorrectDressup object and one face"
+__author__ = "OpenSource CNC"
+__url__ = "https://www.patreon.com/collection/657672"
+
+
+from FreeCADGui import Selection
+
+
+face = Selection.getSelectionEx()[1].SubObjects[0]
+faceName = Selection.getSelectionEx()[1].SubElementNames[0]
+target = Selection.getSelection()[0]
+support = Selection.getSelection()[1]
+
+print()
+print(f"Set {faceName} as interpSurface for target {target.Label}")
+
+target.interpSurface = face

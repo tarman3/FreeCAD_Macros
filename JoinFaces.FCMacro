@@ -1,0 +1,26 @@
+
+__title__ = "Connecting all the adjacent or overlapping faces into only one continuous face"
+__doc__ = ""
+__author__ = "OpenSource CNC"
+__url__ = "https://www.patreon.com/collection/657672"
+
+
+import time
+import Part
+from draftgeoutils import faces
+from FreeCADGui import Selection
+
+selections = Selection.getSelection()
+Gui.Selection.clearSelection()
+hits = []
+
+for sel in selections:
+    shape=sel.Shape
+    hits.append(shape)
+
+new_shape = hits[0].fuse(hits[1:])
+new_faces = faces.concatenate(new_shape).Faces
+new_e = Part.show(Part.Compound(new_faces))
+
+for sel in selections:
+    FreeCAD.ActiveDocument.removeObject(sel.Name)
