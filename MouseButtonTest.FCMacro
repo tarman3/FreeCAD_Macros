@@ -1,3 +1,6 @@
+
+__Title__    = "Test mouse buttons"
+
 from pivy.coin import *
 class inputPoints:
 #

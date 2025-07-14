@@ -14,19 +14,19 @@ can be used to create a extrudeable sketch.
 Edit the settings in the main() function for the creation of the Voronoi tesselation
 and run the macro inside an active sketch.
 """
-__Name__ = 'PDVoronoiFace'
-__Comment__ = 'Create Voronoi Pattern on Face'
-__Author__ = 'Sebastian Bachmann'
-__Version__ = '0.0.1'
-__Date__ = '2020-02-28'
-__License__ = 'MIT'
-__Web__ = 'https://github.com/reox/FreeCAD_Macros'
-__Wiki__ = ''
-__Icon__ = 'PDVoronoi.svg'
-__Help__ = 'Select a face'
-__Status__ = 'Beta'
-__Requires__ = '>=0.19.18234; py3 only'
-__Communication__ = 'https://github.com/reox/FreeCAD_Macros/issues'
+__Name__ = "PDVoronoiFace"
+__Comment__ = "Create Voronoi Pattern on Face"
+__Author__ = "Sebastian Bachmann"
+__Version__ = "0.0.1"
+__Date__ = "2020-02-28"
+__License__ = "MIT"
+__Web__ = "https://github.com/reox/FreeCAD_Macros"
+__Wiki__ = ""
+__Icon__ = "PDVoronoi.svg"
+__Help__ = "Select a face"
+__Status__ = "Beta"
+__Requires__ = ">=0.19.18234; py3 only"
+__Communication__ = "https://github.com/reox/FreeCAD_Macros/issues"
 """
 Copyright (c) 2019, Sebastian Bachmann <hello@reox.at>
 
