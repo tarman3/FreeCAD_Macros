@@ -1,12 +1,17 @@
 import os
 import re
 
+url = "https://github.com/tarman3/FreeCAD_Macros/blob/main"
+
 output = ["# FreeCAD_Macros"]
+output.append("[forum.freecad.org](https://forum.freecad.org/search.php?keywords=macro&author=tarman3&sf=firstpost&sr=topics)")
 output.append("| Macro | Description |")
 output.append("| --- | --- |")
 
-noTitle = 0
-for filename in os.listdir():
+filesList = sorted(os.listdir())
+
+noTitleCounter = 0
+for filename in filesList:
     # print()
     if "FCMacro" in filename:
         # print(filename)
@@ -22,12 +27,12 @@ for filename in os.listdir():
                 title = search[1:-1]
                 # print(f"  {line.strip()}")
                 # print(f"  {title}")
-                output.append(f"| {filename} | {title} |")
+                output.append(f"| [{filename}]({url}/{filename}) | {title} |")
 
             break
     else:
         print(f"  No title in file: -{filename}-")
-        noTitle += 1
+        noTitleCounter += 1
 
 result = "\n".join(output)
 
