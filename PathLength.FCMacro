@@ -1,0 +1,40 @@
+
+__title__ = "Measure length of selected Path"
+__doc__ = "Select Path elements and get length"
+__url__ = ""
+
+import Path
+import Path.Base.Generator.dogboneII as dogboneII
+import Path.Base.Language as PathLanguage
+import Path.Dressup.Utils as PathDressup
+import PathScripts.PathUtils as PathUtils
+
+
+print()
+print("<<<<< Macro measure Path length >>>>>")
+
+def run(selection):
+    totalLength = 0
+    for sel in selection:
+        obj = sel.Object
+        subName = sel.SubElementNames
+        print()
+        print(f"  {obj.Name}")
+        # print("subName", subName)
+        if obj.isDerivedFrom("Path::Feature"):
+            source = PathLanguage.Maneuver.FromPath(obj.Path).instr
+            for cmd in subName:
+                instrNum = int(cmd.split()[0])
+                instr = source[instrNum - 1]
+                instrLength = instr.pathLength()
+                print(f"    {instrNum:3d}  {instrLength:5.1f}   {instr}")
+
+                totalLength += instrLength
+
+    return totalLength
+
+selection = FreeCADGui.Selection.getSelectionEx()
+output = run(selection)
+
+print()
+print(f"  Total length: {round(output,1)}")

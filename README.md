@@ -18,6 +18,7 @@
 | [MoveToOrigin.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/MoveToOrigin.FCMacro) | Move to origin |
 | [OuterWire.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/OuterWire.FCMacro) | Create outer wire |
 | [PathFromShape.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/PathFromShape.FCMacro) | Path From Shape |
+| [PathLength.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/PathLength.FCMacro) | Measure length of selected Path |
 | [PathPointsDistance.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/PathPointsDistance.FCMacro) | Measure distance between Path nodes  |
 | [PointsZ.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/PointsZ.FCMacro) | Colorize points by Z |
 | [RectangleTrimex.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/RectangleTrimex.FCMacro) | Rectangle Trimex |
