@@ -15,7 +15,10 @@ def getFacesZ(body, targetZ, toleranceZ):
     facesZ = []
     for i, face in enumerate(body.Shape.Faces):
         center = face.CenterOfMass
-        if abs(center.z - targetZ) <= toleranceZ:
+        if (
+            Path.Geom.isHorizontal(face)
+            and abs(center.z - targetZ) <= toleranceZ
+        ):
             facesZ.append((i+1, face))  # (index, face)
     return facesZ
 

@@ -2,7 +2,7 @@
 [forum.freecad.org](https://forum.freecad.org/search.php?keywords=macro&author=tarman3&sf=firstpost&sr=topics)
 | Macro | Description |
 | --- | --- |
-| [CAMDeepCopy.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/CAMDeepCopy.FCMacro) | Deep copy of Path operarion and set expressions |
+| [CAMDeepCopy.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/CAMDeepCopy.FCMacro) | Deep copy of Path operation and set expressions |
 | [ColorRandom.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/ColorRandom.FCMacro) | Set random color for selected objects |
 | [ConsoleToggle.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/ConsoleToggle.FCMacro) | Toggle panels Python console and Report view |
 | [DrawStyleToggle.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/DrawStyleToggle.FCMacro) | Toggle draw style selected objects |
