@@ -8,8 +8,13 @@ from PySide import QtGui
 
 mw=Gui.getMainWindow()
 
-panelConsole=mw.findChild(QtGui.QDockWidget, 'Python console')
-panelReport=mw.findChild(QtGui.QDockWidget, 'Report view')
+panelConsole = mw.findChild(QtGui.QDockWidget, 'Python console')
+if not panelConsole:
+    panelConsole = mw.findChild(QtGui.QDockWidget, 'Python Console')
+
+panelReport = mw.findChild(QtGui.QDockWidget, 'Report view')
+if not panelReport:
+    panelReport = mw.findChild(QtGui.QDockWidget, 'Report View')
 
 if panelReport.isVisible() or panelConsole.isVisible():
     panelReport.hide()
