@@ -1,89 +1,135 @@
 
-__title__ = "Create gcode for processing fillet by BallEnd mill"
+__title__ = "Create gcode for processing fillet by BallEnd or Endmill"
 __doc__ = ""
 __url__ = "https://forum.freecad.org/viewtopic.php?t=94642"
 
 
-print('\n------- Macro to create gcode for processing fillet by BallEnd mill')
+print()
+print('--- Macro to create gcode for processing fillet by BallEnd or Endmill ---')
 
 """
 1. Create Job
-2. Add BallEnd tool
-3. Create one Profile for top contour
-   Remove expressions from Start Depth and Final Depth
-   Set Start Depth = Final Depth = Height of the top profile (do not use expressions)
-   Step Down = more than fillet radius
-   Use Comp = false
-   Side = Outside
-   Offset Extra = 0
+2. Add BallEnd or Endmill tool
+3. Create Profile for top contour
+   Check Final Depth must be the same like Height of the top profile
+   Side = Outside (for fillet on outer side)
 4. Check parameters in macro
-   step = 0.2 (Max vertical or horizontal movement)
-   filletRadius = Radius of fillet
-5. Select Profile
+   step = Max vertical or horizontal movement
+   filletRadius = Radius of the fillet
+5. Select Profile operation and edge or shape to determine radius of fillet
 6. Execute macro
    Check Report view if needed
 """
 
 step = 0.2       # Max vertical or horizontal movement
 inc = step/10    # Step for calculation
-filletRadius = 4
+filletRadius = 5
 
+import PathScripts.PathUtils as PathUtils
 
-sel = FreeCADGui.Selection.getSelection()
+sel = FreeCADGui.Selection.getSelectionEx()
 if not sel:
-    print(f'Please select base profile in top of fillet')
+    print(f'  Please select base profile in top of fillet')
 
 else:
-    baseProfile = sel[0]
+    origProfile = [s.Object for s in sel if "Profile" in s.Object.Name][0]
+
+    for s in sel:
+        if s.Object.isDerivedFrom("Part::Feature"):
+            obj = s.Object
+            subName = s.SubElementNames[0]
+            if "Edge" in subName:
+                edge = obj.Shape.getElement(subName)
+                if hasattr(edge.Curve, "Radius"):
+                    filletRadius = edge.Curve.Radius
+                    break
+            elif "Face" in subName:
+                face = obj.Shape.getElement(subName)
+                if hasattr(face.Surface, "Radius"):
+                    filletRadius = face.Surface.Radius
+                    break
+                if hasattr(face.Surface, "MinorRadius"):
+                    filletRadius = face.Surface.MinorRadius
+                    break
+    else:
+        print(f"  Can not determine radius from selected shape. Used default value {filletRadius}")
+
+    # subBase = sel[0].SubElementNames[0]
+
+    # Create copy of Profile
+    baseProfile = FreeCAD.ActiveDocument.copyObject(origProfile)
+    job = PathUtils.findParentJob(origProfile)
+    job.Proxy.addOperation(baseProfile)
+
     baseProfile.setExpression("FinalDepth", None)
     baseProfile.setExpression("StartDepth", None)
+    baseProfile.setExpression("StepDown", None)
+
+    tool = baseProfile.ToolController.Tool
+    toolDiam = tool.Diameter.Value
+    toolShapeType = tool.ShapeType
+
+    if "ballend" in toolShapeType.casefold():
+        baseProfile.UseComp = False
+    else:
+        baseProfile.UseComp = True
+
+    baseProfile.StartDepth = baseProfile.FinalDepth.Value
+    baseProfile.StepDown = filletRadius + toolDiam + 0.1
+    baseProfile.OffsetExtra = 0
 
     startDepth = baseProfile.StartDepth.Value
-    toolDiam = baseProfile.ToolController.Tool.Diameter.Value
-
-    finalDepth = startDepth-toolDiam/2-filletRadius
-    effectiveRadius = filletRadius + toolDiam/2
+    if "ballend" in toolShapeType.casefold():
+        finalDepth = startDepth - toolDiam/2 - filletRadius
+        effectiveRadius = filletRadius + toolDiam/2
+    else:
+        finalDepth = startDepth - filletRadius
+        effectiveRadius = filletRadius
 
     gcode = []
     currentDepth = startDepth
 
-    for i in range (1,100,1):
+    for i in range (1, 100, 1):
         effectiveHeight = effectiveRadius - (startDepth-currentDepth)
-        offsetExtraPrev =(effectiveRadius**2 - effectiveHeight**2)**0.5
+        offsetExtraPrev = (effectiveRadius**2 - effectiveHeight**2)**0.5
         currentDepthPrev = currentDepth
         for j in range(1, 100, 1):
             currentDepth -= inc
             effectiveHeight = effectiveRadius - (startDepth-currentDepth)
-            offsetExtra =(effectiveRadius**2 - effectiveHeight**2)**0.5
+            offsetExtra = (effectiveRadius**2 - effectiveHeight**2)**0.5
 
-            if ( (offsetExtra - offsetExtraPrev)   >= step
-            or   (currentDepthPrev - currentDepth) >= step
-            or currentDepth <= finalDepth):
+            if (
+               (offsetExtra - offsetExtraPrev) >= step
+               or (currentDepthPrev - currentDepth) >= step
+               or currentDepth <= finalDepth
+            ):
                 # Get next optimal depth
                 break
         else:
-            print(f'Macro overlimit B')
+            print(f"  Macro overlimit B")
 
         if currentDepth <= finalDepth + 0.001: break
 
 
-        print(f'depth={currentDepth:.2f} OffsetExtra={offsetExtra:.2f}')
+        # print(f'  depth={currentDepth:.2f} OffsetExtra={offsetExtra:.2f}')
+
         # Set currentDepth and offsetExtra to Profile
         baseProfile.FinalDepth = currentDepth
         baseProfile.OffsetExtra = offsetExtra
         baseProfile.recompute()
         gcodeCurrent = [c.toGCode() for c in baseProfile.Path.Commands]
+
         # Get gcode from profile path
         gcode += gcodeCurrent
 
     else:
-        print(f'Macro overlimit A')
+        print(f'  Macro overlimit A')
 
-    # Return initial depth and offsetExtra to Profile
-    baseProfile.FinalDepth = startDepth
-    baseProfile.OffsetExtra = 0
+    # Delete copy of Profile
+    FreeCAD.ActiveDocument.removeObject(baseProfile.Name)
 
-    print(f'filletRadius={filletRadius} toolDiam={toolDiam} startDepth={startDepth} finalDepth={finalDepth}')
+    print(f"  filletRadius={filletRadius}  startDepth={startDepth}  finalDepth={finalDepth}")
+    print(f"  toolShapeType={toolShapeType}  toolDiam={toolDiam}")
 
     res = Path.Op.Gui.Custom.Command.res
     filletGcode = Path.Op.Custom.Create("filletGcode")

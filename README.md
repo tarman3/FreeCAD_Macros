@@ -8,7 +8,7 @@
 | [DrawStyleToggle.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/DrawStyleToggle.FCMacro) | [Toggle draw style selected objects](https://forum.freecad.org/viewtopic.php?t=94590) |
 | [Export2SlicerStl.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/Export2SlicerStl.FCMacro) | Export selected objects to amf/stl files and open them in slicing program |
 | [Export2SlicerStp.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/Export2SlicerStp.FCMacro) | [Export STP model to PrusaSlicer](https://forum.freecad.org/viewtopic.php?t=95867) |
-| [Fillet2Profiles.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/Fillet2Profiles.FCMacro) | [Create gcode for processing fillet by BallEnd mill](https://forum.freecad.org/viewtopic.php?t=94642) |
+| [Fillet2Profiles.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/Fillet2Profiles.FCMacro) | [Create gcode for processing fillet by BallEnd or Endmill](https://forum.freecad.org/viewtopic.php?t=94642) |
 | [FixSurface.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/FixSurface.FCMacro) | [Fix face with null edges](https://forum.freecad.org/viewtopic.php?t=96148) |
 | [JobToolsSetIdentical.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/JobToolsSetIdentical.FCMacro) | Set identical Tool Controller for all operations in Job |
 | [JoinFaces.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/JoinFaces.FCMacro) | [Connecting all the adjacent or overlapping faces into only one continuous face](https://www.patreon.com/collection/657672) |
