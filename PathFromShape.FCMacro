@@ -41,7 +41,7 @@ __usage__ = (
     "Run this macro, with or without one or more edges selected from a single model."
 )
 __created__ = "25 January 2025"
-__url__ = ""
+__url__ = "https://forum.freecad.org/viewtopic.php?t=93896"
 __Wiki__ = ""
 
 

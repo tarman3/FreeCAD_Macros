@@ -1,7 +1,7 @@
 
 __title__ = "Measure length of selected Path"
 __doc__ = "Select Path elements and get length"
-__url__ = ""
+__url__ = "https://forum.freecad.org/viewtopic.php?t=98509"
 
 import Path
 import Path.Base.Generator.dogboneII as dogboneII

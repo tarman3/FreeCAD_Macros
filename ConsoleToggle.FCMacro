@@ -27,13 +27,13 @@ else:
 objs = FreeCADGui.Selection.getSelection()
 
 if objs:
-    cmd  = f'objs = FreeCADGui.Selection.getSelection()\n'
-    cmd += f'print("{len(objs)} objects (objs) sent to console:")\n'
-    cmd += f'i=0\n'
-    cmd += f'for obj in objs:\n'
-    cmd += f'    print("   ", f"objs[{{i}}]", "   ",obj.Name, "   ", obj.TypeId, sep="")\n'
-    cmd += f'    i += 1\n'
-    cmd += f'print()\n'
-    cmd += f'print("List of objects is available by variable: objs")\n'
-    cmd += f'print("Last object is available by variable: obj", "\\n")\n'
+    cmd  = f'''objs = FreeCADGui.Selection.getSelection()
+print("{len(objs)} objects (objs) sent to console:")
+i=0
+for obj in objs:
+    print("   ", f"objs[{{i}}]", "   ",obj.Name, "   ", obj.TypeId, sep="")
+    i += 1
+print()
+print("List of objects is available by variable: objs")
+print("Last object is available by variable: obj", "\\n")'''
     Gui.doCommandGui(cmd)

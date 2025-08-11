@@ -1,7 +1,7 @@
 import os
 import re
 
-url = "https://github.com/tarman3/FreeCAD_Macros/blob/main"
+fileUrl = "https://github.com/tarman3/FreeCAD_Macros/blob/main"
 
 output = ["# FreeCAD_Macros"]
 output.append("[forum.freecad.org](https://forum.freecad.org/search.php?keywords=macro&author=tarman3&sf=firstpost&sr=topics)")
@@ -46,9 +46,9 @@ for filename in filesList:
         noUrlCounter += 1
 
     if title and not url:
-        output.append(f"| [{filename}]({url}/{filename}) | {title} |")
+        output.append(f"| [{filename}]({fileUrl}/{filename}) | {title} |")
     elif title and url:
-        output.append(f"| [{filename}]({url}/{filename}) | [{title}]({url}) |")
+        output.append(f"| [{filename}]({fileUrl}/{filename}) | [{title}]({url}) |")
 
 result = "\n".join(output)
 
