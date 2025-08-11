@@ -6,18 +6,37 @@ __url__ = "https://forum.freecad.org/viewtopic.php?t=94642"
 
 print('\n------- Macro to create gcode for processing fillet by BallEnd mill')
 
+"""
+1. Create Job
+2. Add BallEnd tool
+3. Create one Profile for top contour
+   Remove expressions from Start Depth and Final Depth
+   Set Start Depth = Final Depth = Height of the top profile (do not use expressions)
+   Step Down = more than fillet radius
+   Use Comp = false
+   Side = Outside
+   Offset Extra = 0
+4. Check parameters in macro
+   step = 0.2 (Max vertical or horizontal movement)
+   filletRadius = Radius of fillet
+5. Select Profile
+6. Execute macro
+   Check Report view if needed
+"""
 
 step = 0.2       # Max vertical or horizontal movement
 inc = step/10    # Step for calculation
 filletRadius = 4
 
 
-objList = FreeCADGui.Selection.getSelection()
-if not objList:
+sel = FreeCADGui.Selection.getSelection()
+if not sel:
     print(f'Please select base profile in top of fillet')
 
 else:
-    baseProfile = objList[0]
+    baseProfile = sel[0]
+    baseProfile.setExpression("FinalDepth", None)
+    baseProfile.setExpression("StartDepth", None)
 
     startDepth = baseProfile.StartDepth.Value
     toolDiam = baseProfile.ToolController.Tool.Diameter.Value

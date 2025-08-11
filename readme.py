@@ -11,6 +11,7 @@ output.append("| --- | --- |")
 filesList = sorted(os.listdir())
 
 noTitleCounter = 0
+noUrlCounter = 0
 for filename in filesList:
     # print()
     if "FCMacro" in filename:
@@ -20,6 +21,8 @@ for filename in filesList:
     else:
         continue
 
+    title = ""
+    url = ""
     for line in lines:
         if "__title__" in line.casefold() or "__comment" in line.casefold():
             search = re.search(r'[\'\"].*[\'\"]', line).group()
@@ -27,12 +30,25 @@ for filename in filesList:
                 title = search[1:-1]
                 # print(f"  {line.strip()}")
                 # print(f"  {title}")
-                output.append(f"| [{filename}]({url}/{filename}) | {title} |")
 
-            break
-    else:
+        if "__url__" in line.casefold():
+            search = re.search(r'[\'\"].*[\'\"]', line).group()
+            if search:
+                url = search[1:-1]
+                print("url", url)
+
+    if not title:
         print(f"  No title in file: -{filename}-")
         noTitleCounter += 1
+
+    if not url:
+        print(f"  No url in file: -{filename}-")
+        noUrlCounter += 1
+
+    if title and not url:
+        output.append(f"| [{filename}]({url}/{filename}) | {title} |")
+    elif title and url:
+        output.append(f"| [{filename}]({url}/{filename}) | [{title}]({url}) |")
 
 result = "\n".join(output)
 
