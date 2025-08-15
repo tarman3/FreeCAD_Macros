@@ -1,0 +1,106 @@
+
+__title__ = "Create gcode for processing sweeped wire by Endmill"
+__doc__ = ""
+__url__ = "https://forum.freecad.org/viewtopic.php?t=94642"
+
+import FreeCAD
+import FreeCADGui
+import Part
+import Path
+import PathScripts.PathUtils as PathUtils
+
+import copy
+
+"""
+1. Create Job
+2. Add Endmill tool
+3. Create Profile for top contour
+   Check Final Depth must be the same like Height of the top profile
+   Side = Outside (for wire on outer side)
+   Split wire for two parts, if you need process inner and outer side
+4. Select Profile operation and edges of sweeped shape along profile
+5. Execute macro
+   Check Report view if needed
+"""
+
+step = 0.5       # Distance between points on wire
+
+
+def rndVec(vector, prec=1):
+    x = round(vector.x, prec)
+    y = round(vector.y, prec)
+    z = round(vector.z, prec)
+    return FreeCAD.Vector(x, y, z)
+
+print()
+print("--- Macro to create gcode for processing sweeped wire by Endmill ---")
+
+sel = FreeCADGui.Selection.getSelectionEx()
+if not sel:
+    print("  Please select base profile in top of wire")
+
+else:
+    selProfiles = [s.Object for s in sel if "Profile" in s.Object.Name]
+    if not selProfiles:
+        print("  Error: Profile operation not selected")
+    elif not selProfiles[0].Path.Length:
+        print("  Error: Profile do not contain Path")
+
+    shapes = [s for s in sel if "Part" in s.Object.TypeId]
+    wire = None
+    if shapes:
+        shape = shapes[0]
+        base = shape.Object
+        subNames = shape.SubElementNames
+
+        edges = [base.Shape.getElement(sub).copy() for sub in subNames if sub.startswith("Edge")]
+
+        if edges:
+            wire = Part.Wire(Part.__sortEdges__(edges))
+    if not wire:
+        print("  Error: Sweeped wire not selected")
+
+    if selProfiles and wire:
+        origProfile = selProfiles[0]
+        # Points of wire
+        points = wire.discretize(Distance=step)
+        if points[0].z < points[-1].z:
+            # Order from top to bottom
+            points = points[::-1]
+
+        # Create copy of Profile operation
+        baseProfile = FreeCAD.ActiveDocument.copyObject(origProfile)
+        job = PathUtils.findParentJob(origProfile)
+        job.Proxy.addOperation(baseProfile)
+
+        baseProfile.setExpression("FinalDepth", None)
+        baseProfile.setExpression("StartDepth", None)
+        baseProfile.setExpression("StepDown", None)
+        baseProfile.UseComp = True
+        baseProfile.StartDepth = points[0].z
+        baseProfile.OffsetExtra = 0
+        baseProfile.StepDown = points[0].z - points[-1].z + 0.1
+
+        pVert = copy.copy(points[0])
+        gcode = []
+
+        for i, point in enumerate(points):
+            pVert.z = point.z
+            baseProfile.OffsetExtra = point.distanceToPoint(pVert)
+            baseProfile.FinalDepth = point.z
+            baseProfile.recompute()
+
+            gcodeCurrent = [cmd.toGCode() for cmd in baseProfile.Path.Commands]
+            gcode += gcodeCurrent
+
+
+        # Delete copy of Profile
+        FreeCAD.ActiveDocument.removeObject(baseProfile.Name)
+
+        res = Path.Op.Gui.Custom.Command.res
+        filletGcode = Path.Op.Custom.Create("WireGcodeEndMill")
+        filletGcode.ViewObject.Proxy = Path.Op.Gui.Custom.PathOpGui.ViewProvider(filletGcode.ViewObject, res)
+        filletGcode.Gcode = gcode
+        filletGcode.ViewObject.Visibility = True
+        filletGcode.ViewObject.Proxy.deleteOnReject = False
+        filletGcode.recompute()

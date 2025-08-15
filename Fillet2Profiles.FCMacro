@@ -16,7 +16,7 @@ print('--- Macro to create gcode for processing fillet by BallEnd or Endmill ---
 4. Check parameters in macro
    step = Max vertical or horizontal movement
    filletRadius = Radius of the fillet
-5. Select Profile operation and edge or shape to determine radius of fillet
+5. Select Profile operation and edge or face to determine radius of fillet
 6. Execute macro
    Check Report view if needed
 """
