@@ -11,22 +11,25 @@ import PathScripts.PathUtils as PathUtils
 
 import copy
 import math
+import numpy
 import time
 
 """
 1. Create Job
 2. Add BallEnd tool
-3. Create Profile for top contour
-   Check Final Depth must be the same like Height of the top profile
-   Side = Outside (for wire on outer side)
-   Split wire for two parts, if you need process inner and outer side
-4. Select Profile operation and edges of sweeped shape along profile
+3. Create Profile for contour
+4. Select Profile operation and wire (edges of sweeped shape along profile)
+   Disable Refine in solid object if some edges was hidden
 5. Execute macro
    Check Report view if needed
 """
 
 
-step = 0.5       # Distance between points on wire
+step = 2.0               # Distance between points on wire
+removeStartMoves = 3     # Remove n commands from the begin of each step (default 3)
+removeEndMoves = 2       # Remove n commands from the end of each step (default 2)
+repeatLastStep = False   # Repeat last step (default False; set True for "helix" path)
+
 
 def rndVec(vector, prec=1):
     x = round(vector.x, prec)
@@ -77,6 +80,16 @@ def searchStartEnd(point1, point2, wire):
     else:
         print("  Error: Wire not start from base operation")
 
+def isWireUpInStart(point, wire):
+    for vertex in wire.Vertexes:
+        if not Path.Geom.isRoughly(vertex.Point.z, point.z):
+            if vertex.Point.z > point.z:
+                return True
+            elif vertex.Point.z <point.z:
+                return False
+    return False
+
+
 print()
 print("--- Macro to create gcode for processing sweeped wire by BallEnd ---")
 
@@ -88,7 +101,6 @@ if not sel:
 
 else:
     selOps = [s.Object for s in sel if "Profile" in s.Object.Name]
-    print("selOps", selOps)
     if not selOps:
         baseOp = None
         print("  Error: Profile operation not selected")
@@ -130,14 +142,22 @@ else:
 
         p1, p2 = wireProfile.Vertexes[0].Point, wireProfile.Vertexes[-1].Point
         pointProfileStart, pointProfileEnd = searchStartEnd(p1, p2, wirePath)
+        print(f"  wirePathCenter={rndVec(wirePathCenter,1)}")
         print(f"  pointProfileStart={rndVec(pointProfileStart)}  pointProfileEnd={rndVec(pointProfileEnd)}")
 
-        if wirePathCenter.distanceToPoint(pointProfileStart) < wirePathCenter.distanceToPoint(pointProfileEnd):
+        p1, p2 = copy.copy(pointProfileStart), copy.copy(pointProfileEnd)
+        p1.z, p2.z = 0, 0
+        if wirePathCenter.distanceToPoint(p1) < wirePathCenter.distanceToPoint(p2):
             dirFromCenter = True
-            print("  dirFromCenter = True")
         else:
-            print("  dirFromCenter = False")
             dirFromCenter = False
+
+        wireUpInStart = isWireUpInStart(pointProfileStart, wireProfile)
+        if wireUpInStart and dirFromCenter:
+            signD = -1
+        else:
+            signD = 1
+        print(f"  dirFromCenter={dirFromCenter}  wireUpInStart={wireUpInStart}  signD={signD}")
 
         # Create copy of Profile operation
         tempOp = FreeCAD.ActiveDocument.copyObject(baseOp)
@@ -148,6 +168,7 @@ else:
         tempOp.setExpression("StartDepth", None)
         tempOp.setExpression("StepDown", None)
         tempOp.UseComp = False
+        tempOp.Side = "Outside"
         tempOp.StartDepth = pointTop.z
         tempOp.OffsetExtra = 0
 
@@ -157,7 +178,7 @@ else:
         tempOp.StepDown = pointTop.z - pointBottom.z + toolRadius + 0.1
 
         pVert = copy.copy(pointProfileStart)
-        gcode = []
+        commandlist = []
         counter = 0
 
         p1 = wireProfile.Edges[0].Vertexes[0].Point
@@ -168,7 +189,13 @@ else:
             edgesOrder = reversed(wireProfile.Edges)
 
         lastPoint = pointProfileStart
+        xSign = None
+        ySign = None
         for edge in edgesOrder:
+            edgeRadius = getattr(sub.Curve, "Radius", None)
+            if edgeRadius and edgeRadius < toolRadius:
+                print("  Warning: One of the edge has radius less than tool radius")
+
             points = edge.discretize(Distance = step)
             if not Path.Geom.pointsCoincide(lastPoint, points[0]):
                 points = points[::-1]
@@ -177,36 +204,65 @@ else:
             normals = [normalToEdgeAt(edge, point, wireProfilePlane, True) for point in points]
 
             for i, normal in enumerate(normals):
-                counter += 1
+                if counter and i == 0:
+                    # End point previous edge coincide with start point next edge
+                    # Skip repeat
+                    continue
+                prec = 5
+                xS = numpy.sign(round(normal.x, prec))
+                yS = numpy.sign(round(normal.y, prec))
+                # xS = numpy.sign(normal.x)
+                # yS = numpy.sign(normal.y)
+                if (
+                    (xSign is not None and xS and xSign != xS)
+                or  (ySign is not None and yS and ySign != yS)
+                ):
+                    print(f"{i}  Change sign {xSign}=!{xS}  {ySign}=!{yS}")
+                    signD *= -1
+                    pass
+                if xS:
+                    xSign = xS
+                if yS:
+                    ySign = yS
 
                 pVert.z = points[i].z
-                distance = points[i].distanceToPoint(pVert)
-                if not dirFromCenter:
-                    distance = - distance
-                offsetExtra = distance + math.hypot(normal.x, normal.y) * toolRadius
+                signH = 1 if dirFromCenter else -1
+                offsetExtra = points[i].distanceToPoint(pVert) * signH + math.hypot(normal.x, normal.y) * toolRadius * signD
                 finalDepth = points[i].z + abs(normal.z) * toolRadius - toolRadius
 
-                # print(f"offset={offsetExtra}  depth={finalDepth}")
+                # print(f"{i}  offset={round(offsetExtra,1)}  depth={round(finalDepth,1)}  normal={rndVec(normal,3)}")
+
                 # Set currentDepth and offsetExtra to Profile
                 tempOp.OffsetExtra = offsetExtra
                 tempOp.FinalDepth = finalDepth
                 tempOp.recompute()
 
-                gcodeCurrent = [cmd.toGCode() for cmd in tempOp.Path.Commands]
-                gcode += gcodeCurrent
+                counter += 1
+                cmd = Path.Command(f"(WireGcodeBallEnd {counter} Depth={round(finalDepth,2)} Offset={round(offsetExtra,2)})")
+                commandlist.append(cmd)
+                if counter == 1:
+                    commandlist.extend(tempOp.Path.Commands[2:-removeEndMoves])
+                else:
+                    commandlist.extend(tempOp.Path.Commands[2+removeStartMoves:-removeEndMoves])
 
+        if repeatLastStep:
+            # Repeat last Profile
+            commandlist.extend(tempOp.Path.Commands[2+removeStartMoves:])
+        elif removeEndMoves > 0:
+            # Return last move to clearance height
+            commandlist.extend(tempOp.Path.Commands[-removeEndMoves:])
 
         # Delete copy of Profile
         FreeCAD.ActiveDocument.removeObject(tempOp.Name)
 
         res = Path.Op.Gui.Custom.Command.res
-        filletGcode = Path.Op.Custom.Create("WireGcodeBallEnd")
-        filletGcode.ViewObject.Proxy = Path.Op.Gui.Custom.PathOpGui.ViewProvider(filletGcode.ViewObject, res)
-        filletGcode.Gcode = gcode
-        filletGcode.ViewObject.Visibility = True
-        filletGcode.ViewObject.Proxy.deleteOnReject = False
-        filletGcode.recompute()
+        WireGcode = Path.Op.Custom.Create("WireGcodeBallEnd")
+        WireGcode.ViewObject.Proxy = Path.Op.Gui.Custom.PathOpGui.ViewProvider(WireGcode.ViewObject, res)
+        WireGcode.Gcode = [cmd.toGCode() for cmd in commandlist]
+        WireGcode.ViewObject.Visibility = True
+        WireGcode.ViewObject.Proxy.deleteOnReject = False
+        WireGcode.recompute()
 
         timeComp = round(time.monotonic()-timeStart, 1)
-        print(f"  Amount profiles: {counter}  Step: {step} mm  Time computation: {timeComp} sec")
-        print(f"  Tool diameter: {toolDiam} mm")
+        print(f"  Amount profiles: {counter}  Step: {step} mm  Tool diameter: {toolDiam} mm")
+        print(f"  Time computation: {timeComp} sec")
