@@ -11,7 +11,7 @@ import PathScripts.PathUtils as PathUtils
 
 import copy
 import math
-
+import time
 
 """
 1. Create Job
@@ -25,8 +25,8 @@ import math
    Check Report view if needed
 """
 
-step = 1       # Distance between points on wire
 
+step = 0.5       # Distance between points on wire
 
 def rndVec(vector, prec=1):
     x = round(vector.x, prec)
@@ -34,96 +34,170 @@ def rndVec(vector, prec=1):
     z = round(vector.z, prec)
     return FreeCAD.Vector(x, y, z)
 
+def normalToEdgeAt(edge, point, plane, zpos = False):
+    """
+    https://forum.freecad.org/viewtopic.php?p=842307#p842307
+    find normal to edge at point. If undefined because curvature vanishes
+    return normal in plane
+    if zpos=True return normal with a positive z-component
+    """
+    curve = edge.Curve
+    s = curve.parameter(point)
+    if abs(curve.curvature(s)) > 1e-7:
+        normal = curve.normal(s)
+    else:
+        normal = plane.normal(0,0).cross(curve.tangent(s)[0])
+    if normal.z < 0 and zpos:
+        normal = -normal
+
+    return normal
+
+def searchLimitsPoints(wire):
+    # search top - point with max Z
+    # and bottom - point with min Z
+    top = None
+    bottom = None
+    for vertex in wire.Vertexes:
+        if top is None or vertex.Point.z > top.z:
+            top = vertex.Point
+        if bottom is None or vertex.Point.z < bottom.z:
+            bottom = vertex.Point
+    return top, bottom
+
+def searchStartEnd(point1, point2, wire):
+    # point on a wire is startPoint
+    # another point is endPoint
+    for vertex in wire.Vertexes:
+        if Path.Geom.pointsCoincide(vertex.Point, point1):
+            return point1, point2
+            break
+        elif Path.Geom.pointsCoincide(vertex.Point, point2):
+            return point2, point1
+            break
+    else:
+        print("  Error: Wire not start from base operation")
+
 print()
 print("--- Macro to create gcode for processing sweeped wire by BallEnd ---")
 
+timeStart = time.monotonic()
+
 sel = FreeCADGui.Selection.getSelectionEx()
 if not sel:
-    print("  Please select base profile in top of wire")
+    print("  Error: Base operation and profile not selected")
 
 else:
-    selProfiles = [s.Object for s in sel if "Profile" in s.Object.Name]
-    if not selProfiles:
+    selOps = [s.Object for s in sel if "Profile" in s.Object.Name]
+    print("selOps", selOps)
+    if not selOps:
+        baseOp = None
         print("  Error: Profile operation not selected")
-    elif not selProfiles[0].Path.Length:
+    elif selOps[0].Path.Length:
+        baseOp = selOps[0]
+    else:
+        baseOp = None
         print("  Error: Profile do not contain Path")
 
     shapes = [s for s in sel if "Part" in s.Object.TypeId]
-    wire = None
+    wireProfile = None
     if shapes:
         shape = shapes[0]
         base = shape.Object
         subNames = shape.SubElementNames
-
         edges = [base.Shape.getElement(sub).copy() for sub in subNames if sub.startswith("Edge")]
-
         if edges:
-            wire = Part.Wire(Part.__sortEdges__(edges))
-    if not wire:
+            wireProfile = Part.Wire(Part.__sortEdges__(edges))
+            wireProfilePlane = wireProfile.findPlane()
+        else:
+            print("  Error: Selection do not contain edges")
+
+    if not wireProfile:
         print("  Error: Sweeped wire not selected")
 
-    if selProfiles and wire:
-        origProfile = selProfiles[0]
-        wirePlane = wire.findPlane()
-        wirePlaneNormal = wirePlane.normal(0, 0)
-        pointTop = wire.Vertexes[0].Point
-        pointBottom = wire.Vertexes[-1].Point
-        if pointTop.z < pointBottom.z:
-            pointTop, pointBottom = pointBottom, pointTop
-            isWireReversed = True
+
+    if baseOp and wireProfile:
+        pathEdges = []
+        for base, subs in baseOp.Base:
+            for feature in subs:
+                sub = base.Shape.getElement(feature)
+                if type(sub) is Part.Edge:
+                    pathEdges.append(sub)
+        wirePath = Part.Wire(Part.__sortEdges__(pathEdges))
+        wirePathCenter = wirePath.BoundBox.Center
+
+        pointTop, pointBottom = searchLimitsPoints(wireProfile)
+        print(f"  top={rndVec(pointTop)}  bottom={rndVec(pointBottom)}")
+
+        p1, p2 = wireProfile.Vertexes[0].Point, wireProfile.Vertexes[-1].Point
+        pointProfileStart, pointProfileEnd = searchStartEnd(p1, p2, wirePath)
+        print(f"  pointProfileStart={rndVec(pointProfileStart)}  pointProfileEnd={rndVec(pointProfileEnd)}")
+
+        if wirePathCenter.distanceToPoint(pointProfileStart) < wirePathCenter.distanceToPoint(pointProfileEnd):
+            dirFromCenter = True
+            print("  dirFromCenter = True")
         else:
-            isWireReversed = False
+            print("  dirFromCenter = False")
+            dirFromCenter = False
 
         # Create copy of Profile operation
-        baseProfile = FreeCAD.ActiveDocument.copyObject(origProfile)
-        job = PathUtils.findParentJob(origProfile)
-        job.Proxy.addOperation(baseProfile)
+        tempOp = FreeCAD.ActiveDocument.copyObject(baseOp)
+        job = PathUtils.findParentJob(baseOp)
+        job.Proxy.addOperation(tempOp)
 
-        baseProfile.setExpression("FinalDepth", None)
-        baseProfile.setExpression("StartDepth", None)
-        baseProfile.setExpression("StepDown", None)
-        baseProfile.UseComp = False
-        baseProfile.StartDepth = pointTop.z
-        baseProfile.OffsetExtra = 0
+        tempOp.setExpression("FinalDepth", None)
+        tempOp.setExpression("StartDepth", None)
+        tempOp.setExpression("StepDown", None)
+        tempOp.UseComp = False
+        tempOp.StartDepth = pointTop.z
+        tempOp.OffsetExtra = 0
 
-        tool = baseProfile.ToolController.Tool
+        tool = tempOp.ToolController.Tool
         toolDiam = tool.Diameter.Value
         toolRadius = toolDiam / 2
-        baseProfile.StepDown = pointTop.z - pointBottom.z + toolDiam/2 + 0.1
+        tempOp.StepDown = pointTop.z - pointBottom.z + toolRadius + 0.1
 
-        pVert = copy.copy(pointTop)
+        pVert = copy.copy(pointProfileStart)
         gcode = []
-        for edge in wire.Edges:
-            points = edge.discretize(Distance = step)
-            if isWireReversed:
-                points = points[::-1]
+        counter = 0
 
-            # https://forum.freecad.org/viewtopic.php?p=842238#p842238
-            if isinstance(edge.Curve, Part.Line):
-                tangent = edge.tangentAt(0)
-                normals = [tangent.cross(wirePlaneNormal)] * len(points)
-            else:
-                normals = [edge.Curve.normal(edge.Curve.parameter(p)) for p in points]
+        p1 = wireProfile.Edges[0].Vertexes[0].Point
+        p2 = wireProfile.Edges[0].Vertexes[-1].Point
+        if Path.Geom.pointsCoincide(p1, pointProfileStart) or Path.Geom.pointsCoincide(p2, pointProfileStart):
+            edgesOrder = wireProfile.Edges
+        else:
+            edgesOrder = reversed(wireProfile.Edges)
+
+        lastPoint = pointProfileStart
+        for edge in edgesOrder:
+            points = edge.discretize(Distance = step)
+            if not Path.Geom.pointsCoincide(lastPoint, points[0]):
+                points = points[::-1]
+            lastPoint = points[-1]
+
+            normals = [normalToEdgeAt(edge, point, wireProfilePlane, True) for point in points]
 
             for i, normal in enumerate(normals):
-                if normal.z < 0:
-                    normal = normal.negative()
+                counter += 1
 
                 pVert.z = points[i].z
-                offsetExtra = points[i].distanceToPoint(pVert) + math.hypot(normal.x, normal.y) * toolRadius
+                distance = points[i].distanceToPoint(pVert)
+                if not dirFromCenter:
+                    distance = - distance
+                offsetExtra = distance + math.hypot(normal.x, normal.y) * toolRadius
                 finalDepth = points[i].z + abs(normal.z) * toolRadius - toolRadius
 
+                # print(f"offset={offsetExtra}  depth={finalDepth}")
                 # Set currentDepth and offsetExtra to Profile
-                baseProfile.FinalDepth = finalDepth
-                baseProfile.OffsetExtra = offsetExtra
-                baseProfile.recompute()
+                tempOp.OffsetExtra = offsetExtra
+                tempOp.FinalDepth = finalDepth
+                tempOp.recompute()
 
-                gcodeCurrent = [cmd.toGCode() for cmd in baseProfile.Path.Commands]
+                gcodeCurrent = [cmd.toGCode() for cmd in tempOp.Path.Commands]
                 gcode += gcodeCurrent
 
 
         # Delete copy of Profile
-        FreeCAD.ActiveDocument.removeObject(baseProfile.Name)
+        FreeCAD.ActiveDocument.removeObject(tempOp.Name)
 
         res = Path.Op.Gui.Custom.Command.res
         filletGcode = Path.Op.Custom.Create("WireGcodeBallEnd")
@@ -132,3 +206,7 @@ else:
         filletGcode.ViewObject.Visibility = True
         filletGcode.ViewObject.Proxy.deleteOnReject = False
         filletGcode.recompute()
+
+        timeComp = round(time.monotonic()-timeStart, 1)
+        print(f"  Amount profiles: {counter}  Step: {step} mm  Time computation: {timeComp} sec")
+        print(f"  Tool diameter: {toolDiam} mm")
