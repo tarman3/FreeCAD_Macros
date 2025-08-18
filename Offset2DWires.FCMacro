@@ -1,0 +1,55 @@
+
+__title__ = "Create 2D offset for each wire"
+__doc__ = ""
+__url__ = "https://forum.freecad.org/viewtopic.php?t="
+
+import FreeCADGui
+import Part
+
+import time
+
+"""
+1. Select shapes
+2. Execute macro
+   Check Report view if needed
+
+
+join: method of offsetting non-tangent joints
+    0 - acrs
+    1 - tangent
+    2 - intersection
+
+openResult: affects the way open wires are processed
+    False - open wire is made
+    True  - closed wire is made from a double-sided offset, with rounds around open vertices
+
+intersection: affects the way compounds are processed
+    False - all children are offset independently
+    True - children are edges/wires, the children are offset in a collective manner
+    If compounding is nested, collectiveness does not spread across compounds (only direct children of a compound are taken collectively
+"""
+
+offset = -5
+join = 1
+openResult = True
+
+print()
+print("--- Macro to create 2D offset for each wire in selected shapes ---")
+
+timeStart = time.monotonic()
+
+selections = FreeCADGui.Selection.getSelection()
+if not selections:
+    print("  Error: Nothing selected")
+
+else:
+    offsetShapes = []
+    for sel in selections:
+        wires = sel.Shape.Wires
+        for wire in wires:
+            offsetShapes.append(wire.makeOffset2D(offset, join=join, openResult=openResult))
+
+    Part.show(Part.makeCompound(offsetShapes))
+
+    timeComp = round(time.monotonic()-timeStart, 1)
+    print(f"  Time computation: {timeComp} sec")

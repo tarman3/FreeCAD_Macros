@@ -16,6 +16,7 @@
 | [MouseButtonTest.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/MouseButtonTest.FCMacro) | Test mouse buttons |
 | [MouseFilter.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/MouseFilter.FCMacro) | [Modify mousewheel-arrowkey events for Qspinboxes](https://forum.freecad.org/viewtopic.php?t=92512) |
 | [MoveToOrigin.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/MoveToOrigin.FCMacro) | Move to origin |
+| [Offset2DWires.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/Offset2DWires.FCMacro) | [Create 2D offset for each wire](https://forum.freecad.org/viewtopic.php?t=) |
 | [OuterWire.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/OuterWire.FCMacro) | Create outer wire |
 | [PathFromShape.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/PathFromShape.FCMacro) | [Path From Shape](https://forum.freecad.org/viewtopic.php?t=93896) |
 | [PathLength.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/PathLength.FCMacro) | [Measure length of selected Path](https://forum.freecad.org/viewtopic.php?t=98509) |
