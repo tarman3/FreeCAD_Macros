@@ -10,98 +10,231 @@ import Path
 import PathScripts.PathUtils as PathUtils
 
 import copy
-
+import time
 
 """
 1. Create Job
 2. Add Endmill tool
-3. Create Profile for top contour
-   Check Final Depth must be the same like Height of the top profile
-   Side = Outside (for wire on outer side)
-   Split wire for two parts, if you need process inner and outer side
-4. Select Profile operation and edges of sweeped shape along profile
+3. Create Profile for contour
+4. Select Profile operation and wire (edges of sweeped shape along profile)
+   Disable Refine in solid object if some edges was hidden
 5. Execute macro
    Check Report view if needed
 """
 
-step = 0.5       # Distance between points on wire
+
+step = 1.0               # Distance between points on wire
+removeStartMoves = 3     # Remove n commands from the begin of each step (default 3)
+removeEndMoves = 2       # Remove n commands from the end of each step (default 2)
+repeatLastStep = False   # Repeat last step (default False; set True for "helix" path)
 
 
 def rndVec(vector, prec=1):
+    # useful for print vector
     x = round(vector.x, prec)
     y = round(vector.y, prec)
     z = round(vector.z, prec)
     return FreeCAD.Vector(x, y, z)
 
+def getWireFromOp(op):
+    pathEdges = []
+    for base, subs in op.Base:
+        for feature in subs:
+            sub = base.Shape.getElement(feature)
+            if isinstance(sub, Part.Edge):
+                pathEdges.append(sub)
+            elif isinstance(sub, Part.Face):
+                print("  Error: Profile operation should be created for Edges, not Faces\n")
+                return None
+
+    return Part.Wire(Part.__sortEdges__(pathEdges))
+
+def getLimitsPoints(points):
+    # search top - point with max Z
+    # and bottom - point with min Z
+    top = None
+    bottom = None
+    for point in points:
+        if top is None or point.z > top.z:
+            top = point
+        if bottom is None or point.z < bottom.z:
+            bottom = point
+    return top, bottom
+
+def getPointsOrder(wireProfile, wirePath):
+    points = wireProfile.discretize(Distance=step)
+    for vertex in wirePath.Vertexes:
+        if Path.Geom.pointsCoincide(vertex.Point, points[0]):
+            return points
+        elif Path.Geom.pointsCoincide(vertex.Point, points[-1]):
+            return points[::-1]
+    else:
+        print("  Error: Wire not start from base operation\n")
+
+def isWireUpInStart(points):
+    for i in range(len(points) - 1):
+        if not Path.Geom.isRoughly(points[i].z, points[i+1].z):
+            if points[i].z < points[i+1].z:
+                return True
+            elif points[i].z > points[i+1].z:
+                return False
+    return False
+
+
 print()
 print("--- Macro to create gcode for processing sweeped wire by Endmill ---")
 
+timeStart = time.monotonic()
+
 sel = FreeCADGui.Selection.getSelectionEx()
 if not sel:
-    print("  Please select base profile in top of wire")
+    print("  Error: Base operation and profile not selected\n")
 
 else:
-    selProfiles = [s.Object for s in sel if "Profile" in s.Object.Name]
-    if not selProfiles:
-        print("  Error: Profile operation not selected")
-    elif not selProfiles[0].Path.Length:
-        print("  Error: Profile do not contain Path")
+    selOps = [s.Object for s in sel if "Profile" in s.Object.Name]
+    if not selOps:
+        baseOp = None
+        print("  Error: Profile operation not selected\n")
+    elif selOps[0].Path.Length:
+        baseOp = selOps[0]
+    else:
+        baseOp = None
+        print("  Error: Profile do not contain Path\n")
 
     shapes = [s for s in sel if "Part" in s.Object.TypeId]
-    wire = None
+    wireProfile = None
     if shapes:
         shape = shapes[0]
         base = shape.Object
         subNames = shape.SubElementNames
-
         edges = [base.Shape.getElement(sub).copy() for sub in subNames if sub.startswith("Edge")]
-
         if edges:
-            wire = Part.Wire(Part.__sortEdges__(edges))
-    if not wire:
-        print("  Error: Sweeped wire not selected")
+            # Wire which sweep along profile
+            wireProfile = Part.Wire(Part.__sortEdges__(edges))
+            wireProfilePlane = wireProfile.findPlane()
+        else:
+            print("  Error: Selection do not contain edges\n")
 
-    if selProfiles and wire:
-        origProfile = selProfiles[0]
-        # Points of wire
-        points = wire.discretize(Distance=step)
-        if points[0].z < points[-1].z:
-            # Order from top to bottom
-            points = points[::-1]
+    if not wireProfile:
+        print("  Error: Sweeped wire not selected\n")
+
+
+    if baseOp and wireProfile:
+
+        # Wire along which sweep profile
+        wirePath = getWireFromOp(baseOp)
+        wirePathCenter = wirePath.BoundBox.Center
+        print(f"  wirePathCenter={rndVec(wirePathCenter,1)}")
+
+        # Ordered points of profile wire
+        points = getPointsOrder(wireProfile, wirePath)
+        print(f"  pointProfileStart={rndVec(points[0])}  pointProfileEnd={rndVec(points[-1])}")
+
+        # Top and bottom points
+        pointTop, pointBottom = getLimitsPoints(points)
+        print(f"  top={rndVec(pointTop)}  bottom={rndVec(pointBottom)}")
+
+        # Dir from center, True if move from center to outside
+        p1, p2 = copy.copy(points[0]), copy.copy(points[-1])
+        p1.z, p2.z = 0, 0
+        if wirePathCenter.distanceToPoint(p1) < wirePathCenter.distanceToPoint(p2):
+            dirFromCenter = True
+            signDir = 1
+        else:
+            dirFromCenter = False
+            signDir = -1
+
+        # Vertical direction in start, True if start moves is up
+        wireUpInStart = isWireUpInStart(points)
+        if not dirFromCenter:
+            if wireUpInStart:
+                signComp = 1
+            else:
+                signComp = -1
+
+        if dirFromCenter:
+            if wireUpInStart:
+                signComp = -1
+            else:
+                signComp = 1
+
+        print(f"  dirFromCenter={dirFromCenter}  wireUpInStart={wireUpInStart}  signComp={signComp}")
 
         # Create copy of Profile operation
-        baseProfile = FreeCAD.ActiveDocument.copyObject(origProfile)
-        job = PathUtils.findParentJob(origProfile)
-        job.Proxy.addOperation(baseProfile)
+        tempOp = FreeCAD.ActiveDocument.copyObject(baseOp)
+        job = PathUtils.findParentJob(baseOp)
+        job.Proxy.addOperation(tempOp)
 
-        baseProfile.setExpression("FinalDepth", None)
-        baseProfile.setExpression("StartDepth", None)
-        baseProfile.setExpression("StepDown", None)
-        baseProfile.UseComp = True
-        baseProfile.StartDepth = points[0].z
-        baseProfile.OffsetExtra = 0
-        baseProfile.StepDown = points[0].z - points[-1].z + 0.1
+        # Prepare temp operation
+        tempOp.setExpression("FinalDepth", None)
+        tempOp.setExpression("StartDepth", None)
+        tempOp.setExpression("StepDown", None)
+        tempOp.UseComp = False
+        tempOp.Side = "Outside"
+        tempOp.StartDepth = pointTop.z
+        tempOp.OffsetExtra = 0
+
+        tool = tempOp.ToolController.Tool
+        toolDiam = tool.Diameter.Value
+        toolRadius = toolDiam / 2
+        tempOp.StepDown = pointTop.z - pointBottom.z + 0.1
 
         pVert = copy.copy(points[0])
-        gcode = []
+        commandlist = []
+        counter = 0
+        isMovingUp = None
+        isMovingUpPrev = None
 
+        # Process points
         for i, point in enumerate(points):
+
             pVert.z = point.z
-            baseProfile.OffsetExtra = point.distanceToPoint(pVert)
-            baseProfile.FinalDepth = point.z
-            baseProfile.recompute()
+            if i > 0:
+                if not Path.Geom.isRoughly(pVert.z, points[i-1].z):
+                    if pVert.z > points[i-1].z:
+                        isMovingUp = True
+                    elif pVert.z < points[i-1].z:
+                        isMovingUp = False
 
-            gcodeCurrent = [cmd.toGCode() for cmd in baseProfile.Path.Commands]
-            gcode += gcodeCurrent
+            if isMovingUp is not None and isMovingUpPrev is not None and isMovingUp != isMovingUpPrev:
+                signComp *= -1
+                print(f"{i}  Changed signComp {signComp}")
 
+            isMovingUpPrev = isMovingUp
 
-        # Delete copy of Profile
-        FreeCAD.ActiveDocument.removeObject(baseProfile.Name)
+            finalDepth = point.z
+            offsetExtra = point.distanceToPoint(pVert) * signDir + toolRadius * signComp
+            tempOp.OffsetExtra = offsetExtra
+            tempOp.FinalDepth = finalDepth
+            tempOp.recompute()
+
+            counter += 1
+            cmdTitle = Path.Command(f"(WireGcodeEndmill {counter} Depth={round(finalDepth,2)} Offset={round(offsetExtra,2)})")
+            print(f"  {cmdTitle}")
+            commandlist.append(cmdTitle)
+            if counter == 1:
+                commandlist.extend(tempOp.Path.Commands[2:-removeEndMoves])
+            else:
+                commandlist.extend(tempOp.Path.Commands[2+removeStartMoves:-removeEndMoves])
+
+        if repeatLastStep:
+            # Repeat last Profile
+            commandlist.extend(tempOp.Path.Commands[2+removeStartMoves:])
+        elif removeEndMoves > 0:
+            # Return last move to clearance height
+            commandlist.extend(tempOp.Path.Commands[-removeEndMoves:])
+
+        # Delete copy of Profile operation
+        FreeCAD.ActiveDocument.removeObject(tempOp.Name)
 
         res = Path.Op.Gui.Custom.Command.res
-        filletGcode = Path.Op.Custom.Create("WireGcodeEndMill")
-        filletGcode.ViewObject.Proxy = Path.Op.Gui.Custom.PathOpGui.ViewProvider(filletGcode.ViewObject, res)
-        filletGcode.Gcode = gcode
-        filletGcode.ViewObject.Visibility = True
-        filletGcode.ViewObject.Proxy.deleteOnReject = False
-        filletGcode.recompute()
+        WireGcode = Path.Op.Custom.Create("WireGcodeEndmill")
+        WireGcode.ViewObject.Proxy = Path.Op.Gui.Custom.PathOpGui.ViewProvider(WireGcode.ViewObject, res)
+        WireGcode.Gcode = [cmd.toGCode() for cmd in commandlist]
+        WireGcode.ViewObject.Visibility = True
+        WireGcode.ViewObject.Proxy.deleteOnReject = False
+        WireGcode.recompute()
+
+        timeComp = round(time.monotonic()-timeStart, 1)
+        print(f"  Amount profiles: {counter}  Step: {step} mm  Tool diameter: {toolDiam} mm")
+        print(f"  Time computation: {timeComp} sec")

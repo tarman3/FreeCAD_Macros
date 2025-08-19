@@ -45,6 +45,8 @@ if not selections:
 else:
     offsetShapes = []
     for sel in selections:
+        if not hasattr(sel, "Shape"):
+            continue
         wires = sel.Shape.Wires
         for wire in wires:
             offsetShapes.append(wire.makeOffset2D(offset, join=join, openResult=openResult))
