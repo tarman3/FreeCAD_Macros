@@ -18,14 +18,16 @@ import time
 1. Create Job
 2. Add BallEnd tool
 3. Create Profile for contour
-4. Select Profile operation and wire (edges of sweeped shape along profile)
+4. Set step in macro or StepDown from Profile will be used
+5. Select Profile operation and wire (edges of sweeped shape along profile)
    Disable Refine in solid object if some edges was hidden
-5. Execute macro
+6. Execute macro
    Check Report view if needed
 """
 
 
-step = 1.0               # Distance between points on wire
+step = 0                 # Distance between points on wire
+                         # Set negative or zero value to read value from base Profile StepDown
 removeStartMoves = 3     # Remove n commands from the begin of each step (default 3)
 removeEndMoves = 2       # Remove n commands from the end of each step (default 2)
 repeatLastStep = False   # Repeat last step (default False; set True for "helix" path)
@@ -144,6 +146,9 @@ else:
         wirePath = getWireFromOp(baseOp)
         wirePathCenter = wirePath.BoundBox.Center
         print(f"  wirePathCenter={rndVec(wirePathCenter,1)}")
+
+        if step <= 0:
+            step = baseOp.StepDown.Value
 
         # Ordered points of profile wire
         points = getPointsOrder(wireProfile, wirePath)
