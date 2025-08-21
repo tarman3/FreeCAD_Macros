@@ -258,9 +258,10 @@ else:
 
                 xS = numpy.sign(round(normal.x, 5))
                 yS = numpy.sign(round(normal.y, 5))
-                if (xSign is not None and xS and xSign != xS) or (ySign is not None and yS and ySign != yS):
-                    signComp *= -1
-                    print(f"{counter}  Change signComp={signComp} {xSign}=!{xS} or {ySign}=!{yS}")
+                if xSign is not None and ySign is not None:
+                    if (xS and xSign != xS) or (yS and ySign != yS):
+                        signComp *= -1
+                        print(f"{counter}  Change signComp={signComp} {xSign}=!{xS} or {ySign}=!{yS}")
                 if xS:
                     xSign = xS
                 if yS:
