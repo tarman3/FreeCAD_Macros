@@ -16,7 +16,8 @@ import time
 1. Create Job
 2. Add Endmill tool
 3. Create Profile for contour
-4. Set step in macro or StepDown from Profile will be used
+4. Set 'step' in macro or by property Profile.StepDown
+   Set 'roughOffset' in macro or by property Profile.OffsetExtra
 5. Select Profile operation and wire (edges of sweeped shape along profile)
    Disable Refine in solid object if some edges was hidden
 6. Execute macro
@@ -25,7 +26,11 @@ import time
 
 
 step = 0                 # Distance between points on wire
-                         # Set negative or zero value to read value from base Profile StepDown
+                         # Set negative or zero value to read value from base Profile.StepDown
+
+roughOffset = 0          # Offset for rough mill
+                         # Set negative or zero value to read value from base Profile.OffsetExtra
+
 removeStartMoves = 3     # Remove n commands from the begin of each step (default 3)
 removeEndMoves = 2       # Remove n commands from the end of each step (default 2)
 repeatLastStep = False   # Repeat last step (default False; set True for "helix" path)
@@ -103,6 +108,9 @@ else:
         baseOp = None
         print("  Error: Profile do not contain Path\n")
 
+    if baseOp and "endmill" not in baseOp.ToolController.Tool.ShapeType.casefold():
+        print("  Warning: Tool shape is not Endmill\n")
+
     shapes = [s for s in sel if "Part" in s.Object.TypeId]
     wireProfile = None
     if shapes:
@@ -165,10 +173,14 @@ else:
 
         print(f"  dirFromCenter={dirFromCenter}  wireUpInStart={wireUpInStart}  signComp={signComp}")
 
+        if roughOffset <= 0:
+            roughOffset = baseOp.OffsetExtra.Value
+
         # Create copy of Profile operation
-        tempOp = FreeCAD.ActiveDocument.copyObject(baseOp)
+        doc = FreeCAD.ActiveDocument
+        tempOp = doc.copyObject(baseOp)
         job = PathUtils.findParentJob(baseOp)
-        job.Proxy.addOperation(tempOp)
+        PathUtils.addToJob(tempOp, job.Name)
 
         # Prepare temp operation
         tempOp.setExpression("FinalDepth", None)
@@ -207,8 +219,8 @@ else:
 
             isMovingUpPrev = isMovingUp
 
-            finalDepth = point.z
-            offsetExtra = point.distanceToPoint(pVert) * signDir + toolRadius * signComp
+            finalDepth = point.z + roughOffset
+            offsetExtra = point.distanceToPoint(pVert) * signDir + (toolRadius + roughOffset) * signComp
             tempOp.OffsetExtra = offsetExtra
             tempOp.FinalDepth = finalDepth
             tempOp.recompute()
@@ -234,6 +246,7 @@ else:
 
         res = Path.Op.Gui.Custom.Command.res
         WireGcode = Path.Op.Custom.Create("WireGcodeEndmill")
+        WireGcode.ToolController = baseOp.ToolController
         WireGcode.ViewObject.Proxy = Path.Op.Gui.Custom.PathOpGui.ViewProvider(WireGcode.ViewObject, res)
         WireGcode.Gcode = [cmd.toGCode() for cmd in commandlist]
         WireGcode.ViewObject.Visibility = True
