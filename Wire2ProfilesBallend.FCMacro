@@ -107,8 +107,10 @@ def isWireUpInStart(points):
     return False
 
 
+toolType = "Ballend"
+
 print()
-print("--- Macro to create gcode for processing sweeped wire by Ballend ---")
+print(f"--- Macro to create gcode for processing sweeped wire by {toolType} ---")
 
 timeStart = time.monotonic()
 
@@ -127,8 +129,8 @@ else:
         baseOp = None
         print("  Error: Profile do not contain Path\n")
 
-    if baseOp and "ballend" not in baseOp.ToolController.Tool.ShapeType.casefold():
-        print("  Warning: Tool shape is not Ballend\n")
+    if baseOp and toolType.casefold() not in baseOp.ToolController.Tool.ShapeType.casefold():
+        print(f"  Warning: Tool shape is not {toolType}\n")
 
     shapes = [s for s in sel if "Part" in s.Object.TypeId]
     wireProfile = None
@@ -225,7 +227,8 @@ else:
 
         lastPoint = points[0]
         pVert = copy.copy(points[0])
-        commandlist = []
+        cmdMainTitle = Path.Command(f"(Wire2ProfilesBallend: toolDiam={toolDiam} step={step} roughOffset={roughOffset})")
+        commandlist = [cmdMainTitle]
         counter = 0
         xSign, ySign, xS, yS = None, None, None, None
 
@@ -276,9 +279,9 @@ else:
                 tempOp.recompute()
 
                 counter += 1
-                cmdTitle = Path.Command(f"(WireGcodeBallend {counter} Depth={round(finalDepth,2)} Offset={round(offsetExtra,2)})")
-                print(f"  {cmdTitle}")
-                commandlist.append(cmdTitle)
+                cmdStepTitle = Path.Command(f"(Wire2Profiles{toolType} {counter} Depth={round(finalDepth,2)} Offset={round(offsetExtra,2)})")
+                print(f"  {cmdStepTitle}")
+                commandlist.append(cmdStepTitle)
                 if counter == 1:
                     commandlist.extend(tempOp.Path.Commands[2:-removeEndMoves])
                 else:
@@ -295,7 +298,13 @@ else:
         FreeCAD.ActiveDocument.removeObject(tempOp.Name)
 
         res = Path.Op.Gui.Custom.Command.res
-        WireGcode = Path.Op.Custom.Create("WireGcodeBallend", parentJob=job)
+
+        opLabel = f"{toolType}_d{toolDiam}_step{step}_"
+        if roughOffset > 0:
+            opLabel += f"rough{roughOffset}_"
+        opName = opLabel.replace(".", "-")
+        WireGcode = Path.Op.Custom.Create(opName, parentJob=job)
+        WireGcode.Label = opLabel
         WireGcode.ToolController = baseOp.ToolController
         WireGcode.ViewObject.Proxy = Path.Op.Gui.Custom.PathOpGui.ViewProvider(WireGcode.ViewObject, res)
         WireGcode.Gcode = [cmd.toGCode() for cmd in commandlist]
