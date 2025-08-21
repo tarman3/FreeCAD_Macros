@@ -295,7 +295,7 @@ else:
         FreeCAD.ActiveDocument.removeObject(tempOp.Name)
 
         res = Path.Op.Gui.Custom.Command.res
-        WireGcode = Path.Op.Custom.Create("WireGcodeBallend")
+        WireGcode = Path.Op.Custom.Create("WireGcodeBallend", parentJob=job)
         WireGcode.ToolController = baseOp.ToolController
         WireGcode.ViewObject.Proxy = Path.Op.Gui.Custom.PathOpGui.ViewProvider(WireGcode.ViewObject, res)
         WireGcode.Gcode = [cmd.toGCode() for cmd in commandlist]
