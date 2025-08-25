@@ -11,7 +11,6 @@ import PathScripts.PathUtils as PathUtils
 
 import copy
 import math
-import numpy
 import time
 
 """
@@ -199,8 +198,10 @@ else:
         p2 = wireProfile.Edges[0].Vertexes[-1].Point
         if Path.Geom.pointsCoincide(p1, points[0]) or Path.Geom.pointsCoincide(p2, points[0]):
             edgesOrder = wireProfile.Edges
-        else:
+        elif Path.Geom.pointsCoincide(p1, points[-1]) or Path.Geom.pointsCoincide(p2, points[-1]):
             edgesOrder = reversed(wireProfile.Edges)
+        else:
+            print("  Error: Can not determine order edges of wireProfile\n")
 
         if roughOffset <= 0:
             roughOffset = baseOp.OffsetExtra.Value
@@ -230,10 +231,10 @@ else:
         cmdMainTitle = Path.Command(f"(Wire2ProfilesBallend: toolDiam={toolDiam} step={step} roughOffset={roughOffset})")
         commandlist = [cmdMainTitle]
         counter = 0
-        xSign, ySign, xS, yS = None, None, None, None
+        isMovingUp, isMovingUpPrev = None, None
 
         # Process edges
-        for indexEdge, edge in enumerate(edgesOrder):
+        for i, edge in enumerate(edgesOrder):
             edgeRadius = getattr(edge.Curve, "Radius", None)
             if edgeRadius and edgeRadius < toolRadius:
                 print("  Warning: One of the edge has radius less than tool radius\n")
@@ -242,37 +243,46 @@ else:
             if Path.Geom.pointsCoincide(lastPoint, points[-1]):
                 points = points[::-1]
             elif not Path.Geom.pointsCoincide(lastPoint, points[0]):
-                print("  Error: Erorr in order points of edge {indexEdge}\n")
-
-            lastPoint = points[-1]
+                print("  Error: Can not determine order points of edge {i}\n")
+                break
 
             normals = [getNormalToEdge(edge, point, wireProfilePlane, True) for point in points]
 
             # Process points of normal
-            for indexNormal, normal in enumerate(normals):
+            for j, normal in enumerate(normals):
 
-                if counter > 0 and indexNormal == 0:
+                if i > 0 and j == 0:
                     # End point previous edge coincide with start point next edge
                     # Skip repeat
                     continue
 
-                xS = numpy.sign(round(normal.x, 5))
-                yS = numpy.sign(round(normal.y, 5))
-                if xSign is not None and ySign is not None:
-                    if (xS and xSign != xS) or (yS and ySign != yS):
-                        signComp *= -1
-                        print(f"{counter}  Change signComp={signComp} {xSign}=!{xS} or {ySign}=!{yS}")
-                if xS:
-                    xSign = xS
-                if yS:
-                    ySign = yS
+                if j > 0:
+                    # compare points of this edge
+                    if not Path.Geom.isRoughly(points[j].z, points[j-1].z):
+                        if points[j].z > points[j-1].z:
+                            isMovingUp = True
+                        elif points[j].z < points[j-1].z:
+                            isMovingUp = False
+                else:
+                    # compare with last point of previous edge
+                    if not Path.Geom.isRoughly(points[j].z, lastPoint.z):
+                        if points[j].z > lastPoint.z:
+                            isMovingUp = True
+                        elif points[j].z < lastPoint.z:
+                            isMovingUp = False
+
+                if isMovingUp is not None and isMovingUpPrev is not None and isMovingUp != isMovingUpPrev:
+                    signComp *= -1
+                    print(f"{j}  Changed signComp {signComp}")
+
+                isMovingUpPrev = isMovingUp
 
                 toolRadiusRough = toolRadius + roughOffset
-                pVert.z = points[indexNormal].z
-                offsetExtra = points[indexNormal].distanceToPoint(pVert) * signDir + math.hypot(normal.x, normal.y) * toolRadiusRough * signComp
-                finalDepth = points[indexNormal].z + toolRadiusRough * (abs(normal.z) - 1)
+                pVert.z = points[j].z
+                offsetExtra = points[j].distanceToPoint(pVert) * signDir + math.hypot(normal.x, normal.y) * toolRadiusRough * signComp
+                finalDepth = points[j].z + toolRadiusRough * (abs(normal.z) - 1)
 
-                # print(f"{i}  offset={round(offsetExtra,1)}  depth={round(finalDepth,1)}  normal={rndVec(normal,3)}")
+                # print(f"{j}  offset={round(offsetExtra,1)}  depth={round(finalDepth,1)}  normal={rndVec(normal,3)}")
 
                 # Set currentDepth and offsetExtra to Profile
                 tempOp.OffsetExtra = offsetExtra
@@ -287,6 +297,8 @@ else:
                     commandlist.extend(tempOp.Path.Commands[2:-removeEndMoves])
                 else:
                     commandlist.extend(tempOp.Path.Commands[2+removeStartMoves:-removeEndMoves])
+
+            lastPoint = points[-1]
 
         if repeatLastStep:
             # Repeat last Profile
