@@ -3,11 +3,8 @@ __title__ = "Measure length of selected Path"
 __doc__ = "Select Path elements and get length"
 __url__ = "https://forum.freecad.org/viewtopic.php?t=98509"
 
-import Path
-import Path.Base.Generator.dogboneII as dogboneII
+import FreeCADGui
 import Path.Base.Language as PathLanguage
-import Path.Dressup.Utils as PathDressup
-import PathScripts.PathUtils as PathUtils
 
 
 print()
@@ -15,26 +12,66 @@ print("<<<<< Macro measure Path length >>>>>")
 
 def run(selection):
     totalLength = 0
+    totalLengthMill = 0
+    totalLengthRapidHor = 0
+    totalLengthPlunge = 0
+    totalLengthSelected = 0
+
     for sel in selection:
         obj = sel.Object
-        subName = sel.SubElementNames
-        print()
-        print(f"  {obj.Name}")
-        # print("subName", subName)
+        print(f"  {obj.Label}")
+        subNames = sel.SubElementNames
+        # print()
+        # print(f"  {obj.Name}")
+        # print("subNames", subNames)
         if obj.isDerivedFrom("Path::Feature"):
             source = PathLanguage.Maneuver.FromPath(obj.Path).instr
-            for cmd in subName:
-                instrNum = int(cmd.split()[0])
-                instr = source[instrNum - 1]
-                instrLength = instr.pathLength()
-                print(f"    {instrNum:3d}  {instrLength:5.1f}   {instr}")
+            if subNames:
+                for cmd in subNames:
+                    instrNum = int(cmd.split()[0])
+                    instr = source[instrNum - 1]
+                    instrLength = instr.pathLength()
+                    print(f"    {instrNum:3d}  {instrLength:5.1f}   {instr}")
+                    totalLengthSelected += instrLength
+            else:
+                for i, instr in enumerate(source):
+                    if instr.isMove():
+                        totalLength += instr.pathLength()
 
-                totalLength += instrLength
+                    if instr.isMove() and not instr.isRapid() and not instr.isPlunge():
+                        totalLengthMill += instr.pathLength()
 
-    return totalLength
+                    if instr.isMove() and instr.isRapid() and not instr.isPlunge():
+                        totalLengthRapidHor += instr.pathLength()
+
+                    if instr.isMove() and instr.isPlunge():
+                        totalLengthPlunge += instr.pathLength()
+
+    result = {
+        "totalLength": totalLength,
+        "totalLengthMill": totalLengthMill,
+        "totalLengthRapidHor": totalLengthRapidHor,
+        "totalLengthPlunge": totalLengthPlunge,
+        "totalLengthSelected": totalLengthSelected
+    }
+
+    return result
 
 selection = FreeCADGui.Selection.getSelectionEx()
-output = run(selection)
+result = run(selection)
 
 print()
-print(f"  Total length: {round(output,1)}")
+if result["totalLength"]:
+    print(f'  Total length:    {round(result["totalLength"], 1)}')
+
+if result["totalLengthMill"]:
+    print(f'  Length mill:     {round(result["totalLengthMill"], 1)}')
+
+if result["totalLengthRapidHor"]:
+    print(f'  Length rapid XY: {round(result["totalLengthRapidHor"], 1)}')
+
+if result["totalLengthPlunge"]:
+    print(f'  Length plunge:   {round(result["totalLengthPlunge"], 1)}')
+
+if result["totalLengthSelected"]:
+    print(f'  Length selected: {round(result["totalLengthSelected"], 1)}')
