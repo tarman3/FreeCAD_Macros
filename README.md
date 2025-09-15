@@ -37,7 +37,8 @@
 | [TreeMoveUp.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/TreeMoveUp.FCMacro) | [Move up selected objects in group](https://forum.freecad.org/viewtopic.php?t=97244) |
 | [VisibilityToggle.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/VisibilityToggle.FCMacro) | [Toggle visibility](https://forum.freecad.org/viewtopic.php?t=94541) |
 | [Voronoi_Random_Patern.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/Voronoi_Random_Patern.FCMacro) | Create Voronoi Pattern on Face |
-| [Wire2ProfilesBallend.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/Wire2ProfilesBallend.FCMacro) | [Create gcode for processing sweeped wire by BallEnd](https://forum.freecad.org/viewtopic.php?t=94642) |
+| [Wire2ProfilesBallend.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/Wire2ProfilesBallend.FCMacro) | [Create gcode for processing sweeped wire by Ballend](https://forum.freecad.org/viewtopic.php?t=94642) |
 | [Wire2ProfilesEndmill.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/Wire2ProfilesEndmill.FCMacro) | [Create gcode for processing sweeped wire by Endmill](https://forum.freecad.org/viewtopic.php?t=94642) |
+| [WiresConnect.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/WiresConnect.FCMacro) | Wires connect |
 | [ZDepthCorrectionSurface.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/ZDepthCorrectionSurface.FCMacro) | [Add Face as Guide to ZDepthCorrection](https://www.patreon.com/collection/657672) |
 | [timer.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/timer.FCMacro) | Timer |
