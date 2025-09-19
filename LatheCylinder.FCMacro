@@ -1,0 +1,67 @@
+
+__title__ = "Mill cylinder with turn axis"
+__doc__ = ""
+__url__ = ""
+
+
+import Path
+import math
+
+
+turnAxisName = "A"  # Name turn axis
+mainAxisName = "Y"  # Name axis along piece
+slaveAxisName = "X" if mainAxisName == "Y" else "Y"
+axisDir = -1        # Set 1 if main axis dir is positive or -1 for negative
+
+workLength = 700
+square = 50
+finalDiam = 49
+
+toolDiam = 12
+stepOver = 0.5  # 0.5 is 50%
+zStep = 20
+vertFeed = 1000
+horizFeed = 10000
+
+stepsPerTurn = 3  # need split turn at least by 3 to get full turn and continuous rotation of axis
+turnStep = 360 / stepsPerTurn
+
+
+zSafe = round((math.sqrt(2 * (square/2)**2) - square/2) + 5)
+yStep = toolDiam * stepOver * (turnStep / 360)
+finalDepth = finalDiam - square
+
+print(f"zSafe={zSafe}  yStep={yStep}  finalDepth={finalDepth}")
+
+commands = []
+angle = 0
+z = zSafe
+while z > finalDepth:
+
+    z -= zStep
+    z = finalDepth if z < finalDepth else z
+
+    commands.append(Path.Command("G0", {"Z": zSafe}))
+    commands.append(Path.Command("G0", {turnAxisName: angle}))
+    commands.append(Path.Command("G0", {slaveAxisName: 0, mainAxisName: 0}))
+
+    commands.append(Path.Command("G1", {"Z": z, "F": vertFeed}))
+
+    y = 0
+    while y < workLength:
+        y += yStep
+        y = workLength if y > workLength else y
+
+        angle = (angle + turnStep) % 360
+
+        commands.append(Path.Command("G1", {mainAxisName: y*axisDir, turnAxisName: angle, "F": horizFeed}))
+
+commands.append(Path.Command("G0", {"Z": zSafe}))
+
+op = Path.Op.Custom.Create("Cylinder")
+res = Path.Op.Gui.Custom.Command.res
+op.ViewObject.Proxy = Path.Op.Gui.Custom.PathOpGui.ViewProvider(op.ViewObject, res)
+op.Gcode = [cmd.toGCode() for cmd in commands]
+op.ViewObject.Visibility = True
+op.ViewObject.Proxy.deleteOnReject = False
+op.recompute()

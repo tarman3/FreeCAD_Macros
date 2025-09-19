@@ -18,15 +18,16 @@ joints = []
 for i in range(len(wires) - 1):
 
     start = 0 if end == -1 else -1
-    p = wires[i].OrderedVertexes[end].Point
 
+    p = wires[i].OrderedVertexes[end].Point
     p1 = wires[i+1].OrderedVertexes[start].Point
     p2 = wires[i+1].OrderedVertexes[end].Point
+
     if p.distanceToPoint(p1) < threshold:
         end = -1 if start == 0 else 0
         line = Part.LineSegment(p, p1)
 
-    if p.distanceToPoint(p2) < threshold:
+    elif p.distanceToPoint(p2) < threshold:
         end = -1 if end == 0 else 0
         line = Part.LineSegment(p, p2)
 
@@ -35,7 +36,7 @@ for i in range(len(wires) - 1):
 
 wires.extend(joints)
 edges = [edge for wire in wires for edge in wire.Edges]
-print(edges)
+
 for sortedEdges in Part.sortEdges(edges):
     wire = Part.Wire(sortedEdges)
     Part.show(wire)
