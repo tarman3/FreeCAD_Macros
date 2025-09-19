@@ -1,0 +1,47 @@
+
+__title__ = "Mill shape with turn axis"
+__doc__ = ""
+__url__ = ""
+
+import FreeCADGui
+import Path
+
+pathShape = FreeCADGui.Selection.getSelection()[0]
+
+turnAxisName = "A"  # Name turn axis
+mainAxisName = "Y"  # Name axis along piece
+slaveAxisName = "X" if mainAxisName == "Y" else "Y"
+
+stepsPerTurn = 3  # need split turn at least by 3 to get full turn and continuous rotation of axis
+turnStep = 360 / stepsPerTurn
+turnDir = -1
+
+movePerStep = pathShape.Segmentation.Value
+
+commands = []
+angle = 0 if turnDir == 1 else 360
+lastY = 0
+lastName = "G1"
+for cmd in pathShape.Path.Commands:
+
+    if cmd.y is not None:
+        yLength = abs(cmd.y - lastY)
+        # angle = (angle + turnStep*yLength/movePerStep) % 360
+        angle = (angle + turnStep*turnDir) % 360
+        cmd.A = angle
+        if cmd.Name != lastName:
+            cmd.F = 1000
+        else:
+            cmd.F = 30000
+        lastY = cmd.y
+        lastName = cmd.Name
+
+    commands.append(cmd)
+
+op = Path.Op.Custom.Create("LathePathShape")
+res = Path.Op.Gui.Custom.Command.res
+op.ViewObject.Proxy = Path.Op.Gui.Custom.PathOpGui.ViewProvider(op.ViewObject, res)
+op.Gcode = [cmd.toGCode() for cmd in commands]
+op.ViewObject.Visibility = True
+op.ViewObject.Proxy.deleteOnReject = False
+op.recompute()
