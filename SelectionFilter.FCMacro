@@ -1,0 +1,45 @@
+
+__title__ = "Toggle selection filter"
+__doc__ = "Macro to toggle selection filter between vertexes, edges and faces"
+__url__ = "https://forum.freecad.org/viewtopic.php?t=99939"
+
+
+import FreeCAD
+import FreeCADGui
+
+paramPath = "User parameter:BaseApp/Macro/SelectionFilter"
+
+def convert(state):
+    match state:
+        case 1:
+            return "Vertex"
+        case 2:
+            return "Edge"
+        case 3:
+            return "Face"
+        case _:
+            return "Any shapes"
+
+def readPar():
+    param=FreeCAD.ParamGet(paramPath)
+    return param.GetInt("state")
+
+def savePar(state):
+    param=FreeCAD.ParamGet(paramPath)
+    param.SetInt("state", state)
+
+
+state = readPar()
+state += 1
+if state > 3:
+    state = 0
+    FreeCADGui.Selection.removeSelectionGate()
+else:
+    stateName = convert(state)
+    cmd = f"SELECT Part::Feature SUBELEMENT {stateName} SELECT App::Link SUBELEMENT {stateName}"
+    FreeCADGui.Selection.addSelectionGate(cmd)
+
+savePar(state)
+
+print(f"Toggle selection filter to {convert(state)}")
+
