@@ -30,7 +30,7 @@ intersection: affects the way compounds are processed
 """
 
 offset = -5
-join = 1
+join = 0
 openResult = True
 
 print()

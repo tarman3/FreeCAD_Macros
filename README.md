@@ -13,7 +13,7 @@
 | [JobToolsSetIdentical.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/JobToolsSetIdentical.FCMacro) | Set identical Tool Controller for all operations in Job |
 | [JoinFaces.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/JoinFaces.FCMacro) | [Connecting all the adjacent or overlapping faces into only one continuous face](https://www.patreon.com/collection/657672) |
 | [LatheCylinder.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/LatheCylinder.FCMacro) | Mill cylinder with turn axis |
-| [LathePathShape.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/LathePathShape.FCMacro) | Mill shape with turn axis |
+| [LathePathShape.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/LathePathShape.FCMacro) | [Mill shape with turn axis](https://forum.freecad.org/viewtopic.php?t=99901) |
 | [LengthWires.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/LengthWires.FCMacro) | Calculate length of selected wires |
 | [MouseButtonTest.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/MouseButtonTest.FCMacro) | Test mouse buttons |
 | [MouseFilter.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/MouseFilter.FCMacro) | [Modify mousewheel-arrowkey events for Qspinboxes](https://forum.freecad.org/viewtopic.php?t=92512) |

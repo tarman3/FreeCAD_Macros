@@ -1,7 +1,7 @@
 
 __title__ = "Mill shape with turn axis"
-__doc__ = ""
-__url__ = ""
+__doc__ = "Add turn to each command"
+__url__ = "https://forum.freecad.org/viewtopic.php?t=99901"
 
 import FreeCADGui
 import Path
@@ -21,7 +21,6 @@ movePerStep = pathShape.Segmentation.Value
 commands = []
 angle = 0 if turnDir == 1 else 360
 lastY = 0
-lastName = "G1"
 for cmd in pathShape.Path.Commands:
 
     if cmd.y is not None:
@@ -29,12 +28,10 @@ for cmd in pathShape.Path.Commands:
         # angle = (angle + turnStep*yLength/movePerStep) % 360
         angle = (angle + turnStep*turnDir) % 360
         cmd.A = angle
-        if cmd.Name != lastName:
-            cmd.F = 1000
-        else:
-            cmd.F = 30000
+        if cmd.Name in ("G2", "G3"):
+            cmd = Path.Command("G1", {"A": angle, "X": cmd.x, "Y": cmd.y, "Z": cmd.z})
+
         lastY = cmd.y
-        lastName = cmd.Name
 
     commands.append(cmd)
 
