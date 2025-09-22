@@ -1,7 +1,7 @@
 
 __title__ = "Export pseudo-gcode"
 __doc__ = "Save commands from inspect dialog to file"
-__url__ = ""
+__url__ = "https://forum.freecad.org/viewtopic.php?t=99970"
 
 import FreeCAD
 import FreeCADGui
