@@ -5,6 +5,7 @@ __url__ = "https://forum.freecad.org/viewtopic.php?t=99970"
 
 import FreeCAD
 import FreeCADGui
+import PathScripts.PathUtils as PathUtils
 import os
 
 def main(obj):
@@ -16,7 +17,9 @@ def main(obj):
     filename = obj.Label + '.nc'
     file_path = os.path.join(dirname, filename)
 
-    gcode = obj.Path.toGCode()
+    path = PathUtils.getPathWithPlacement(obj)
+
+    gcode = path.toGCode()
 
     with open(file_path, "w") as f:
         f.write(gcode)
