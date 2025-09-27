@@ -7,7 +7,7 @@ __url__ = "https://forum.freecad.org/viewtopic.php?t=98065"
 
 
 print()
-print(f"<<< Macro selecting inner edges from face >>>")
+print("<<< Macro selecting inner edges from face >>>")
 
 def getEdges(face):
     innerEdges = []

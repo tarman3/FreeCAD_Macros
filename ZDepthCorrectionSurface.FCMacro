@@ -5,15 +5,39 @@ __author__ = "OpenSource CNC"
 __url__ = "https://www.patreon.com/collection/657672"
 
 
-from FreeCADGui import Selection
+import FreeCADGui
 
 
-face = Selection.getSelectionEx()[1].SubObjects[0]
-faceName = Selection.getSelectionEx()[1].SubElementNames[0]
-target = Selection.getSelection()[0]
-support = Selection.getSelection()[1]
+selection = FreeCADGui.Selection.getSelectionEx()
+
+support = None
+face = None
+dressup = None
+
+for sel in selection:
+    obj = sel.Object
+
+    if (
+        dressup is None
+        and obj.isDerivedFrom("Path::Feature")
+        and "ZCorrectDressup" in obj.Name
+    ):
+        dressup = obj
+
+    elif support is None and obj.isDerivedFrom("Part::Feature"):
+        subName = sel.SubElementNames[0]
+        if "Face" in subName:
+            support = obj
+            supportName = subName
+            face = sel.SubObjects[0]
 
 print()
-print(f"Set {faceName} as interpSurface for target {target.Label}")
+print("<<< Select ZCorrectDressup object and one face >>>\n")
+if dressup and face:
+    print(f"    Set '{supportName}' from '{support.Label}'")
+    print(f"    as interpSurface for '{dressup.Label}'")
+    dressup.interpSurface = face
 
-target.interpSurface = face
+else:
+    print("<<< Selection incorrect >>>")
+
