@@ -38,6 +38,8 @@ if dressup and face:
     print(f"    as interpSurface for '{dressup.Label}'")
     dressup.interpSurface = face
 
-else:
-    print("<<< Selection incorrect >>>")
+elif dressup is None:
+    print("    Error: Dressup not found")
 
+elif face is None:
+    print("    Error: Face not found")

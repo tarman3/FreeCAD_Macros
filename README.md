@@ -20,11 +20,13 @@
 | [MoveToOrigin.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/MoveToOrigin.FCMacro) | Move to origin |
 | [Offset2DWires.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/Offset2DWires.FCMacro) | [Create 2D offset for each wire](https://forum.freecad.org/viewtopic.php?t=) |
 | [OuterWire.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/OuterWire.FCMacro) | Create outer wire |
-| [PathExportGcode.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/PathExportGcode.FCMacro) | Export pseudo-gcode |
+| [PathExportGcode.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/PathExportGcode.FCMacro) | [Export pseudo-gcode](https://forum.freecad.org/viewtopic.php?t=99970) |
+| [PathExportGcode2.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/PathExportGcode2.FCMacro) | [Export pseudo-gcode 2](https://forum.freecad.org/viewtopic.php?t=99970) |
 | [PathFromShape.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/PathFromShape.FCMacro) | [Path From Shape](https://forum.freecad.org/viewtopic.php?t=93896) |
 | [PathLength.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/PathLength.FCMacro) | [Measure length of selected Path](https://forum.freecad.org/viewtopic.php?t=98509) |
 | [PathPointsDistance.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/PathPointsDistance.FCMacro) | [Measure distance between Path nodes ](https://forum.freecad.org/viewtopic.php?t=97759) |
 | [PointsZ.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/PointsZ.FCMacro) | [Colorize points by Z](https://forum.freecad.org/viewtopic.php?t=94278) |
+| [ProbePointsFromFace.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/ProbePointsFromFace.FCMacro) | Get points from Face |
 | [RectangleTrimex.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/RectangleTrimex.FCMacro) | [Rectangle Trimex](https://forum.freecad.org/viewtopic.php?t=94761) |
 | [SelectAllEdgesFromFace.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/SelectAllEdgesFromFace.FCMacro) | [Select all edges from face](https://www.patreon.com/collection/657672) |
 | [SelectAllEdgesFromObject.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/SelectAllEdgesFromObject.FCMacro) | [Macro selecting all edges from object](https://forum.freecad.org/viewtopic.php?t=98116) |

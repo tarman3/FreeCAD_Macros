@@ -1,0 +1,72 @@
+
+__title__ = "Get points from Face"
+__doc__ = "Get points from Face"
+
+
+import FreeCAD
+import FreeCADGui
+import os
+
+
+distance = 5
+
+
+def saveText(text, name1, name2):
+    doc = FreeCAD.activeDocument()
+    doc_filename = doc.FileName
+    dirname = os.path.dirname(doc_filename)
+    basename = os.path.basename(doc_filename).partition('.')[0]
+    # filename = basename + '_' + obj.Label + '.nc'
+    filename = f"{basename}_{name1}_{name2}_points.txt"
+    file_path = os.path.join(dirname, filename)
+
+    with open(file_path, "w") as f:
+        f.write(text)
+
+    print(f"    Export points to file: {file_path}")
+
+
+def getFace(sel):
+    obj = sel.Object
+    if obj.isDerivedFrom("Part::Feature"):
+        subName = sel.SubElementNames[0]
+        if "Face" in subName:
+            face = sel.SubObjects[0]
+        else:
+            return None, None, None
+
+    return face, obj.Name, subName
+
+def getPoints(face):
+    vectors = face.getPoints(distance)[0]
+    # normals = face.getPoints(distance)[1]
+    pointsList = [f"{round(v.x, 3)} {round(v.y, 3)} {round(v.z, 3)}" for v in vectors]
+    points = "\n".join(pointsList)
+
+    return points
+
+
+def main():
+    print()
+    print()
+    print("<<< Get points from Face >>>\n")
+
+    selection = FreeCADGui.Selection.getSelectionEx()
+    for sel in selection:
+        face, objName, subName = getFace(sel)
+        # print(face, objName, subName)
+
+        if face:
+            pointsText = getPoints(face)
+            # print(pointsText)
+        else:
+            print("   Face not found")
+            return
+
+        if pointsText:
+            saveText(pointsText, objName, subName)
+
+main()
+
+
+
