@@ -24,9 +24,9 @@ if X and Y coordinates did not changed in G1/G2/G3
 
 import os
 import re
-import sys
+# import sys
 import argparse
-from pathlib import Path
+# from pathlib import Path
 from tkinter import simpledialog
 
 
@@ -51,7 +51,7 @@ parser.add_argument("-p", "--postamble", default="", type=str, action="store",
                     help ="Add line to end of the file. Use '\\n' for line break")
 parser.add_argument("-f", "--removeFirstG0Z", action="store_true",
                     help ="Comment first G0 movement")
-parser.add_argument("-z", "--replaceStartZ", default=85, action="store",
+parser.add_argument("-z", "--replaceStartZ", default=0, action="store",
                     help ="Replace Z coordinate for start G0 movements")
 parser.add_argument("--removeG0X0Y0", action="store_true",
                     help ="Remove movements G0 X0 Y0")
@@ -73,10 +73,13 @@ repeats = args.repeats
 skiphead = args.skiphead
 
 if not threshold:
-    threshold = simpledialog.askfloat("gcode_cleanG0", "threshold", initialvalue=1)
+    threshold = simpledialog.askfloat("gcode_post", "threshold", initialvalue=1)
+
+if not replaceStartZ:
+    replaceStartZ = simpledialog.askfloat("gcode_post", "replaceStartZ", initialvalue=100)
 
 if not repeats:
-    repeats = simpledialog.askinteger("gcode_cleanG0", "repeats", initialvalue=1)
+    repeats = simpledialog.askinteger("gcode_post", "repeats", initialvalue=1)
 
 
 files = []
@@ -90,7 +93,8 @@ else:
             if re.search(r'(nc|gc|ncc|ngc|cnc|tap|gcode|g-code)$', ext, re.IGNORECASE) \
             and not name.endswith(newFileSuffix):
                 files.append(file)
-        except: Exception
+        except:
+            Exception
 
 
 for path in files:
@@ -110,7 +114,7 @@ for path in files:
 
     for line in lines:
 
-        if re.search(r'G0\s.*Z', line, re.IGNORECASE):
+        if re.search(r'G0+\s.*Z', line, re.IGNORECASE):
             counterG0 += 1
             if removeFirstG0Z and (counterG0 == 1):
                 lines2comment.append(lineNum)
@@ -154,7 +158,8 @@ for path in files:
         text = f'(PostProcess {newFileSuffix})\n(Amount lines commented by cleanG0: {len(lines2comment)})\n(threshold = {threshold})\n'
         lines.insert(2, text)
 
-    if postamble: lines.append(postamble.replace('\\n', '\n'))
+    if postamble:
+        lines.append(postamble.replace('\\n', '\n'))
 
     pointPos = path.rfind('.')
     newFilePath = path[:pointPos] + newFileSuffix + path[pointPos:]

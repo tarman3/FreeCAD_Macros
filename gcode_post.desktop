@@ -14,12 +14,13 @@ Exec=~/.local/share/kio/servicemenus/gcode_post.py --suffix='_postU' --removeG0X
 [Desktop Action A1X]
 Name=A1X
 Icon=
-Exec=~/.local/share/kio/servicemenus/gcode_post.py --threshold=10 --repeats=50 --skiphead --replaceStartZ=100 --suffix='_postA1X' --removeG0X0Y0 %F
+# Exec=~/.local/share/kio/servicemenus/gcode_post.py --threshold=10 --repeats=10 --skiphead --replaceStartZ=100 --suffix='_postA1X' --removeG0X0Y0 %F
+Exec=~/.local/share/kio/servicemenus/gcode_post.py --threshold=10 --repeats=10 --replaceStartZ=100 --suffix='_postA1X' --removeG0X0Y0 %F
 
 [Desktop Action B1X]
 Name=B1X
 Icon=
-Exec=~/.local/share/kio/servicemenus/gcode_post.py --threshold=10 --repeats=25 --skiphead --replaceStartZ=100 --suffix='_postB1X' --removeG0X0Y0 %F
+Exec=~/.local/share/kio/servicemenus/gcode_post.py --threshold=10 --repeats=10 --skiphead --replaceStartZ=100 --suffix='_postB1X' --removeG0X0Y0 %F
 
 [Desktop Action Mach3]
 Name=Mach3

@@ -31,7 +31,7 @@ if [[ "$arg2" == "configure" ]] || [[ "$reconf" == "y" ]] || [[ "$reconf" == "Y"
         -D BUILD_REVERSEENGINEERING=Off \
         -D BUILD_ROBOT=Off \
         -D BUILD_SMESH=Off \
-        -D BUILD_TEST=Off \
+        -D BUILD_TEST=On \
         -D BUILD_WEB=Off \
         -B "$pathBuild" \
         -S "$pathSource"
@@ -58,15 +58,16 @@ fi
 
 
 if [[ ${coresAmount} =~ ^[0-9]+$ ]]; then
-    timeStart=`date`
+    timeStart=`date +"%T"`
 
     if [[ `command -v kde-inhibit` ]]
         then time kde-inhibit --power cmake --build "$pathBuild" -j${coresAmount}
         else time cmake --build "$pathBuild" -j${coresAmount}
     fi
 
-    timeFinish=`date`
+    timeFinish=`date +"%T"`
     echo
+    echo 'Cores:       '$coresAmount
     echo 'Time start:  '$timeStart
     echo 'Time finish: '$timeFinish
     echo
