@@ -31,7 +31,7 @@ def moveUp(selections):
             return "    Error 4: Elements in different groups"
 
     objects = [sel.Label for sel in selections]
-    print(f"    {", ".join(map(str, objects))}")
+    print(f'    {", ".join(map(str, objects))}')
 
     indexList = [group.Group.index(sel) for sel in selections]
 

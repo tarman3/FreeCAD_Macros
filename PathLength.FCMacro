@@ -61,6 +61,7 @@ selection = FreeCADGui.Selection.getSelectionEx()
 result = run(selection)
 
 print()
+
 if result["totalLength"]:
     print(f'  Total length:    {round(result["totalLength"], 1)}')
 

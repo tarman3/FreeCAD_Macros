@@ -7,14 +7,15 @@ import FreeCAD
 import FreeCADGui
 import PathScripts.PathUtils as PathUtils
 import os
+import sys
 
 def main(obj):
     doc = FreeCAD.activeDocument()
     doc_filename = doc.FileName
     dirname = os.path.dirname(doc_filename)
-    # basename = os.path.basename(doc_filename).partition('.')[0]
-    # filename = basename + '_' + obj.Label + '.nc'
-    filename = obj.Label + '.nc'
+    basename = os.path.basename(doc_filename).partition('.')[0]
+    filename = basename + '_' + obj.Label + '.nc'
+    #filename = obj.Label + '.nc'
     file_path = os.path.join(dirname, filename)
 
     path = PathUtils.getPathWithPlacement(obj)
@@ -24,7 +25,10 @@ def main(obj):
     with open(file_path, "w") as f:
         f.write(gcode)
 
-    print(f"Export pseudo gcode:\n{" "*10}Operation: {obj.Label}\n{" "*10}File:      {file_path}")
+    print(f"Export pseudo gcode:"
+          f"\n{" "*10}Operation: {obj.Label}"
+          f"\n{" "*10}File:      {file_path}"
+          f"\n{" "*10}Size       {len(gcode)}")
 
 
 selection = FreeCADGui.Selection.getSelection()
