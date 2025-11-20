@@ -1,0 +1,18 @@
+
+__title__ = "RecomputesFrozen"
+__doc__ = "Toogle RecomputesFrozen"
+__url__ = "https://forum.freecad.org/viewtopic.php?t=101298"
+
+
+import FreeCADGui
+
+doc = FreeCADGui.ActiveDocument.Document
+
+print(doc.RecomputesFrozen)
+
+doc.RecomputesFrozen = not doc.RecomputesFrozen
+state = doc.RecomputesFrozen
+text = "Recompute enabled" if not state else "Recompute disabled"
+print()
+print(f"<<<<< {text} >>>>>")
+print()
