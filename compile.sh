@@ -3,6 +3,16 @@
 pathBuild="/home/user/projects/FreeCAD_build"
 pathSource="/home/user/projects/FreeCAD_src"
 
+branch=`git -C "$pathSource" branch --show-current`
+echo
+echo "Selected branch: $branch"
+
+if [ "$branch" != "CAM3" ]; then
+    echo
+    read -p "Press Enter to continue"
+    echo
+fi
+
 arg2="$2"
 
 if [ "$arg2" == "" ]; then
