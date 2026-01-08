@@ -5,24 +5,28 @@ __author__ = "OpenSource CNC"
 __url__ = "https://www.patreon.com/collection/657672"
 
 
-sel = Gui.Selection.getSelectionEx()[0]
-obj = sel.Object
-face, = sel.SubObjects
-Gui.Selection.clearSelection()
-hits = []
-Edge = 'Edge{}'.format
-objEdges = tuple(obj.Shape.Edges)
+import FreeCADGui
 
-for fe in face.Edges:
-    feisEqual = fe.isEqual
-    for i, edge in enumerate(objEdges, start=1):
-        if feisEqual(edge):
-            hits.append(Edge(i))
-            break
 
-        edge.reverse()
-        if feisEqual(edge):
-            hits.append(Edge(i))
-            break
+print()
+print("<<< Macro selecting all edges from face >>>")
 
-Gui.Selection.addSelection(obj, hits)
+
+selection = FreeCADGui.Selection.getSelectionEx()
+names = None
+
+if selection and len(selection) == 1 and len(selection[0].SubObjects) == 1:
+    sel = selection[0]
+    obj = sel.Object
+    face = sel.SubObjects[0]
+    objEdges = obj.Shape.Edges
+    faceEdgesHash = [e.hashCode() for e in face.Edges]
+    names = [f"Edge{i + 1}" for i, e in enumerate(objEdges) if e.hashCode() in faceEdgesHash]
+
+if names:
+    FreeCADGui.Selection.clearSelection()
+    FreeCADGui.Selection.addSelection(obj, names)
+    print(f"    Selected edges: {len(names)}")
+    print(f"\n{names}")
+else:
+    print("    Error selection. Select only one face")

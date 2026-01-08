@@ -5,20 +5,28 @@ __author__ = "OpenSource CNC"
 __url__ = "https://www.patreon.com/collection/657672"
 
 
-from FreeCADGui import Selection
+import FreeCADGui
 
-selections = Selection.getSelection()
-Gui.Selection.clearSelection()
 
-for sel in selections:
-    obj=sel.Shape
-    hits = []
-    index = 0
+def main(obj):
+    names = [f"Face{i + 1}" for i, e in enumerate(obj.Shape.Faces)]
+    FreeCADGui.Selection.addSelection(obj, names)
+    print(f"    Found {len(names)} faces in object {obj.Label}")
+    if len(names) < 50:
+        print(f"\n{names}")
 
-    for face in obj.Faces:
-        hits.append(f"Face{index + 1}")
-        index += 1
 
-    print(f"Selected {len(hits)} faces from object {sel.Label}")
-    print(hits)
-    Gui.Selection.addSelection(sel, hits)
+print()
+print("<<< Macro selecting all faces from object >>>")
+
+
+selection = FreeCADGui.Selection.getSelection()
+
+
+if selection:
+    FreeCADGui.Selection.clearSelection()
+    for sel in selection:
+        main(sel)
+else:
+    print("    Nothing selected")
+

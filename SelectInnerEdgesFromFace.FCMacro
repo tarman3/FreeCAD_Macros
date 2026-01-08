@@ -1,69 +1,39 @@
 
-# -*- coding: utf-8 -*-
-
 __title__ = "Select inner edges from face"
 __doc__ = ""
 __url__ = "https://forum.freecad.org/viewtopic.php?t=98065"
 
 
+import FreeCADGui
+import Part
+
+
+def main(selelection):
+    for selEx in selelection:
+        obj = selEx.Object
+
+        for sub in selEx.SubObjects:
+            if not isinstance(sub, Part.Face):
+                continue
+
+            outerPoints = [v.Point for v in sub.OuterWire.Vertexes]
+            innerEdges = [e for e in sub.Edges for v in e.Vertexes if v.Point not in outerPoints]
+            innerEdgesHash = [e.hashCode() for e in innerEdges]
+            edges = obj.Shape.Edges
+            names = [f"Edge{i + 1}" for i, e in enumerate(edges) if e.hashCode() in innerEdgesHash]
+
+            FreeCADGui.Selection.addSelection(obj, names)
+
+            print(f"    Found {len(names)} edges in object {obj.Label}")
+
+
+selelection = FreeCADGui.Selection.getSelectionEx()
+
 print()
 print("<<< Macro selecting inner edges from face >>>")
 
-def getEdges(face):
-    innerEdges = []
-    outerPoints = []
-
-    for vertex in face.OuterWire.Vertexes:
-        outerPoints.append(vertex.Point)
-
-    for edge in face.Edges:
-        for vertex in edge.Vertexes:
-            for point in outerPoints:
-                if Path.Geom.pointsCoincide(point, vertex.Point):
-                    break
-            else:
-                if edge not in innerEdges:
-                    innerEdges.append(edge)
-    return innerEdges
-
-def getEdgesIndexFromBody(body, innerEdges):
-    indexList = set()
-    for innerEdge in innerEdges:
-        pI1 = innerEdge.Vertexes[0].Point
-        pI2 = innerEdge.Vertexes[-1].Point
-        for index, bodyEdge in enumerate(body.Shape.Edges):
-            if round(innerEdge.Length, 1) != round(bodyEdge.Length, 1):
-                continue
-            pB1 = bodyEdge.Vertexes[0].Point
-            pB2 = bodyEdge.Vertexes[-1].Point
-            if (
-                (Path.Geom.pointsCoincide(pI1, pB1) and Path.Geom.pointsCoincide(pI2, pB2))
-             or (Path.Geom.pointsCoincide(pI1, pB2) and Path.Geom.pointsCoincide(pI2, pB1))
-            ):
-                indexList.add(index)
-                break
-    return indexList
-
-def main(selExList):
-    for selEx in selExList:
-        objSel = selEx.Object
-        sub = selEx.SubElementNames[0]
-        body = objSel.getSubObject(sub, 1)
-        for face in selEx.SubObjects:
-            if face.Faces:
-                innerEdges = getEdges(face)
-                innerEdgesIndex = getEdgesIndexFromBody(body, innerEdges)
-
-                print(f"    Found {len(innerEdgesIndex)} edges on selected face")
-
-                Gui.Selection.clearSelection()
-                for index in innerEdgesIndex:
-                    Gui.Selection.addSelection(body, str("Edge" + str(index + 1)))
-
-
-selExList = FreeCADGui.Selection.getSelectionEx("", 0)
-
-if selExList:
-    main(selExList)
+if selelection:
+    FreeCADGui.Selection.clearSelection()
+    main(selelection)
 else:
-    print(f'    Nothing selected')
+    print("    Nothing selected")
