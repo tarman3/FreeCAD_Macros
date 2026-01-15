@@ -3,16 +3,43 @@ __title__ = "Set random color for selected objects"
 __doc__ = ""
 __url__ = "https://forum.freecad.org/viewtopic.php?t=93991"
 
+import FreeCAD
+import FreeCADGui
 
 import random
 
-def main(obj):
-    global outMessage
+
+def processPartShape(obj, color):
+    shape = obj.Shape
     vobj = obj.ViewObject
-    if not hasattr(vobj, 'Selectable'): return None
+    if shape.Edges and not shape.Faces:
+        # only edges
+        vobj.LineColor = color
+    elif shape.Vertexes and not shape.Faces and not shape.Edges:
+        # only points
+        vobj.PointColor = color
+    elif shape.Faces:
+        # faces
+        sapp1 = vobj.ShapeAppearance[0]
+        sapp1.DiffuseColor = color
+        vobj.ShapeAppearance = (sapp1, )
+    else:
+        # other
+        vobj.LineColor = color
+        vobj.PointColor = color
+        sapp1 = vobj.ShapeAppearance[0]
+        sapp1.DiffuseColor = color
+        vobj.ShapeAppearance = (sapp1, )
+
+
+def main(obj):
+    vobj = obj.ViewObject
+    if not hasattr(vobj, "Selectable"):
+        return
     
     vobj.Selectable = False
-    Gui.Selection.addSelection(doc.Name, obj.Name)
+    doc = FreeCAD.ActiveDocument
+    FreeCADGui.Selection.addSelection(doc.Name, obj.Name)
 
     if int(FreeCAD.Version()[0]) == 1 and int(FreeCAD.Version()[1]) > 0:
         transparency = 100 - vobj.Transparency*100
@@ -30,36 +57,29 @@ def main(obj):
              transparency/100
             )
 
-    shapeType = obj.Shape.ShapeType if hasattr(obj, 'Shape') else None
-    if shapeType:
-        sobj = obj.Shape
-        if (sobj.ShapeType in ('Wire', 'Edge')) \
-        or ( (len(sobj.Edges)>0) and (len(sobj.Faces)==0) and (len(sobj.Vertexes)==0) ):
-            vobj.LineColor = color
+    shapeType = None
 
-        elif (len(sobj.Vertexes)>0) and (len(sobj.Faces)==0) and (len(sobj.Edges)==0):
-            vobj.PointColor = color
+    if obj.isDerivedFrom("Part::Feature"):
+        processPartShape(obj, color)
+        shapeType = obj.Shape.ShapeType
 
-        else:
-            sapp1 = vobj.ShapeAppearance[0]
-            sapp1.DiffuseColor = color
-            vobj.ShapeAppearance = (sapp1, )
-
-    elif 'Mesh' in obj.TypeId:
+    elif obj.isDerivedFrom("Mesh::Feature"):
         sapp1 = vobj.ShapeAppearance[0]
         sapp1.DiffuseColor = color
         vobj.ShapeAppearance = (sapp1, )
 
-    outMessage = f'{outMessage}\n\
-Label:     {obj.Label}\n\
-TypeId:    {obj.TypeId}\n\
-ShapeType: {shapeType}\n\
-New Color: {color}\n'
+    outMessage = (
+        f"Label:     {obj.Label}\n"
+        f"          TypeId:    {obj.TypeId}\n"
+        f"          ShapeType: {shapeType}\n"
+        f"          New Color: {color}\n"
+    )
+    print()
+    print(outMessage)
 
     vobj.Selectable = True
         
         
-
 colMap = (
     (0.000,0.187,0.963),(0.000,0.202,0.949),(0.000,0.217,0.935),(0.000,0.231,0.921),
     (0.011,0.244,0.908),(0.036,0.257,0.894),(0.056,0.269,0.880),(0.069,0.281,0.867),
@@ -128,25 +148,18 @@ colMap = (
 )
 
 
+selection = FreeCADGui.Selection.getSelection()
 
-objList = FreeCADGui.Selection.getSelection()
-#obj = objList[0] # for debuging
+print()
+print("<<< Macros RandomColor >>>")
 
-outMessage = f'<<< Macros RandomColor >>>'
-
-if not objList:
-    outMessage = f'{outMessage}\nNothing selected'
-
+if not selection:
+    print("    Nothing selected")
 else:
-    Gui.Selection.clearSelection()
-    
-    doc = App.ActiveDocument
-    
-    for obj in objList:
-        if obj.TypeId == 'App::DocumentObjectGroup':
-            for groupObj in obj.Group:
-                main(groupObj)
+    FreeCADGui.Selection.clearSelection()
+    for sel in selection:
+        if sel.isDerivedFrom("App::DocumentObjectGroup"):
+            for obj in sel.Group:
+                main(obj)
         else:
-            main(obj)
-
-print(outMessage)
+            main(sel)
