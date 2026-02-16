@@ -2,21 +2,24 @@ import os
 import re
 
 fileUrl = "https://github.com/tarman3/FreeCAD_Macros/blob/main"
+pathReadme = "../README.md"
+pathMacros = "../macros"
 
 output = ["# FreeCAD_Macros"]
 output.append("[forum.freecad.org](https://forum.freecad.org/search.php?keywords=macro&author=tarman3&sf=firstpost&sr=topics)")
 output.append("| Macro | Description |")
 output.append("| --- | --- |")
 
-filesList = sorted(os.listdir())
+filesList = sorted(os.listdir(pathMacros))
 
 noTitleCounter = 0
 noUrlCounter = 0
 for filename in filesList:
-    # print()
+    # print(">>>", filename)
+    filePath = pathMacros + "/" + filename
     if "FCMacro" in filename:
         # print(filename)
-        with open(filename, "r") as file:
+        with open(filePath, "r") as file:
             lines = file.readlines()
     else:
         continue
@@ -52,5 +55,5 @@ for filename in filesList:
 
 result = "\n".join(output)
 
-with open("README.md", "w") as file:
+with open(pathReadme, "w") as file:
     file.write(result)
