@@ -20,9 +20,12 @@ def processPartShape(obj, color):
         vobj.PointColor = color
     elif shape.Faces:
         # faces
-        sapp1 = vobj.ShapeAppearance[0]
-        sapp1.DiffuseColor = color
-        vobj.ShapeAppearance = (sapp1, )
+        if vobj.DisplayMode == "Wireframe":
+            vobj.LineColor = color
+        else:
+            sapp1 = vobj.ShapeAppearance[0]
+            sapp1.DiffuseColor = color
+            vobj.ShapeAppearance = (sapp1, )
     else:
         # other
         vobj.LineColor = color
