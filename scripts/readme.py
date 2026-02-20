@@ -1,7 +1,7 @@
 import os
 import re
 
-fileUrl = "https://github.com/tarman3/FreeCAD_Macros/blob/main"
+fileUrl = "https://github.com/tarman3/FreeCAD_Macros/blob/main/macros"
 pathReadme = "../README.md"
 pathMacros = "../macros"
 
