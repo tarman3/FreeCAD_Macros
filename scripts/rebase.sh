@@ -23,20 +23,15 @@ echo "--- Script to rebase muplitple branches ---"
 echo
 echo "    Local path: $PWD"
 echo
-echo -n "    Rebase all branches: (N/y) ? "
-read rebaseAll
-
-if [[ $rebaseAll == "y" ]] || [[ $rebaseAll == "Y" ]]; then
-    all=true
-else
-    all=false
-fi
 
 branches=`git branch --format='%(refname:short)'`
 array=($branches)
 
 counter=0
 rebased=0
+all=false
+this=false
+
 for branch in ${array[@]}; do
     if [ "$branch" == "${main_branch}" ]; then
         # skip main branch
@@ -47,16 +42,20 @@ for branch in ${array[@]}; do
     counterf=$(printf "%-2s" "$counter")
     echo
 
-    if [ $all == true ]; then
+    if $all; then
         # force confirm for all branches
-        confirm="y"
         echo "$counterf - $branch"
     else
-        echo -n "$counterf - Rebase branch: $branch (N/y) ? "
-        read confirm
-        if [[ -n "$confirm" ]] \
-        && [[ "$confirm" != "y" ]] && [[ "$confirm" != "Y" ]] \
-        && [[ "$confirm" != "n" ]] && [[ "$confirm" != "N" ]]; then
+        echo -n "$counterf - Rebase branch: $branch (N/y/all) ? "
+        read answer
+        if [[ "$answer" == "" ]] || [[ "$answer" == "n" ]] || [[ "$answer" == "N" ]]; then
+            this=false
+        elif [[ "$answer" == "y" ]] || [[ "$answer" == "Y" ]]; then
+            this=true
+        elif [[ "$answer" == "all" ]] || [[ "$answer" == "All" ]] || [[ "$answer" == "ALL" ]]; then
+            this=true
+            all=true
+        else
             echo
             echo -e "${RED}     Wrong input. Exit${NC}"
             echo
@@ -64,7 +63,7 @@ for branch in ${array[@]}; do
         fi
     fi
 
-    if [[ "$confirm" == "y" ]] || [[ "$confirm" == "Y" ]]; then
+    if $this; then
         git checkout "$branch"
         git rebase ${main_branch}
         result=$?
