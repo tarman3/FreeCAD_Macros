@@ -40,13 +40,18 @@ fi
 
 mkdir --parents "${temp_dir}/${pr}"
 
-echo
-echo "Get list of modified files from pull request"
-echo
-
 link="https://github.com/FreeCAD/FreeCAD/pull/$pr"
+file_diff="${temp_dir}/${pr}/${pr}.diff"
+curl -s -L "${link}.diff" > "${file_diff}"
+
 files_list="${temp_dir}/${pr}/${pr}.txt"
-curl -s -L "${link}.diff" | grep "diff --git" | sort | cut -d" " -f4 | cut -c3- > "${files_list}"
+cat "${file_diff}" | grep "diff --git" | sort | cut -d" " -f4 | cut -c3- > "${files_list}"
+
+file_patch="${temp_dir}/${pr}/${pr}.patch"
+curl -s -L "${link}.patch" > "${file_patch}"
+
+echo
+cat "${file_patch}" | sed -n '/diff/q;p'| sed -n '/---/,$p' | tail -n +2
 
 if [ ! -f "${files_list}" ]; then
     echo
@@ -87,7 +92,7 @@ else
 fi
 
 echo
-echo -e "Title:   ${GREEN}$title${NC} #${RED}$pr${NC}"
+echo -e "Title:   ${GREEN}$title${NC} #$pr"
 echo "User:    $user"
 echo "Branch:  $branch"
 echo "Commits: $commits"
