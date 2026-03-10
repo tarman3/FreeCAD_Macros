@@ -1,0 +1,28 @@
+tol = 0.01
+
+selection = FreeCADGui.Selection.getSelectionEx()
+subs = selection[0].SubObjects
+
+edges = []
+for edge in subs:        
+    if isinstance(edge.Curve, (Part.Ellipse, Part.Hyperbola, Part.Parabola)):
+        # convert edge to B-Spline
+        shape = edge.toNurbs()
+        edge = shape.Edges[0]
+    elif isinstance(edge.Curve, Part.BezierCurve):
+        # convert BezierCurve to B-Spline
+        curve = edge.Curve.toBSpline()
+        edge = curve.toShape()
+
+    if isinstance(edge.Curve, (Part.Line, Part.Arc)):
+        edges.append(edge)
+    elif isinstance(edge.Curve, Part.BSplineCurve):
+        # convert B-Spline to arcs and lines
+        curves = edge.Curve.toBiArcs(tol)
+        for curve in curves:
+            edge = curve.toShape()
+            edges.append(edge)
+            
+wire = Part.Wire(Part.__sortEdges__(edges))
+Part.show(wire)
+print("amount edges", len(wire.Edges))
