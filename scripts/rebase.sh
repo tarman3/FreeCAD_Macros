@@ -44,7 +44,7 @@ for branch in ${array[@]}; do
 
     if $all; then
         # force confirm for all branches
-        echo "$counterf - $branch"
+        echo -e "$counterf - ${GREEN}$branch${NC}"
     else
         echo -n "$counterf - Rebase branch: $branch (N/y/all) ? "
         read answer
@@ -64,20 +64,26 @@ for branch in ${array[@]}; do
     fi
 
     if $this; then
-        git checkout "$branch"
+        git checkout "$branch" --quiet
         git rebase ${main_branch}
         result=$?
-        if [ "$result" != "0" ]; then
-            echo
-            echo -e "\n${RED}-------------------------"
-            echo "Rebase completed with code: $result"
-            echo "Total branches:       ${#array[@]}"
-            echo "Branches processed:   $counter"
-            echo "Rebased successfully: $rebased"
-            echo -e "-------------------------${NC}"
-            exit
-        else
+        if [ "$result" == "0" ]; then
             rebased=$((rebased+1))
+        else
+            echo -n "Abort and continue rebase next branch (N/y) ? "
+            read answer
+            if [[ "$answer" == "y" ]] || [[ "$answer" == "Y" ]]; then
+                git rebase --abort
+            else
+                echo
+                echo -e "\n${RED}-------------------------"
+                echo "Rebase completed with code: $result"
+                echo "Total branches:       ${#array[@]}"
+                echo "Branches processed:   $counter"
+                echo "Rebased successfully: $rebased"
+                echo -e "-------------------------${NC}"
+                exit
+            fi
         fi
 
     else
