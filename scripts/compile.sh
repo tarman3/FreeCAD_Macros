@@ -1,24 +1,41 @@
 #!/bin/bash
 
 pathBuild="/home/user/projects/FreeCAD_build"
-pathSource="/home/user/projects/FreeCAD_src"
+pathSrc="/home/user/projects/FreeCAD_src"
+pathGit="/home/user/projects/FreeCAD_git"
+myBranch="CAM3"
 
-branch=`git -C "$pathSource" branch --show-current`
-echo
-echo "Selected branch: $branch"
+# Colors
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m'
 
-if [ "$branch" != "CAM3" ]; then
+
+if [ -d "${pathGit}/.git" ]; then
+    branch=`git -C "${pathGit}" branch --show-current`
     echo
-    read -p "Press Enter to continue"
+    echo "Selected branch: $branch"
+
+    if [ "$branch" != "$myBranch" ]; then
+        echo
+        read -p "Type 'Yes' to continue or press Enter to use $myBranch branch" answer
+        if [[ "$answer" != "Yes" ]] && [[ "$answer" != "yes" ]]; then
+            git -C "${pathGit}" checkout $myBranch
+        fi
+    fi
+fi
+
+if [ "${pathSrc}" != "${pathGit}" ]; then
     echo
+    rsync --verbose --checksum --recursive --delete --exclude=".git" --exclude=".ruff_cache" --exclude="*.orig" "${pathGit}/" "${pathSrc}/"
 fi
 
 arg2="$2"
 
-if [ "$arg2" == "" ]; then
-    echo
-    read -p "Need to reconfigure? (y/N): " reconf
-fi
+# if [ "$arg2" == "" ]; then
+#     echo
+#     read -p "Need to reconfigure? (y/N): " reconf
+# fi
 
 if [[ "$arg2" == "configure" ]] || [[ "$reconf" == "y" ]] || [[ "$reconf" == "Y" ]]; then
     echo
@@ -43,8 +60,8 @@ if [[ "$arg2" == "configure" ]] || [[ "$reconf" == "y" ]] || [[ "$reconf" == "Y"
         -D BUILD_SMESH=Off \
         -D BUILD_TEST=On \
         -D BUILD_WEB=Off \
-        -B "$pathBuild" \
-        -S "$pathSource"
+        -B "${pathBuild}" \
+        -S "${pathSrc}"
 #         -D HDF5_NO_FIND_PACKAGE_CONFIG_FILE=ON \
 #         -D HDF5_C_COMPILER_EXECUTABLE=h5hlcc \
 #         -D HDF5_CXX_COMPILER_EXECUTABLE=h5hlc++ \
@@ -84,5 +101,5 @@ if [[ ${coresAmount} =~ ^[0-9]+$ ]]; then
 fi
 
 if [ `command -v kdialog` ]; then
-    kdialog --title "FreeCAD" --icon "cmake" --passivepopup "Compile completed" 15
+    kdialog --title "FreeCAD" --icon "cmake" --passivepopup "Compile completed" 10
 fi
