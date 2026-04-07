@@ -2,6 +2,7 @@
 [forum.freecad.org](https://forum.freecad.org/search.php?keywords=macro&author=tarman3&sf=firstpost&sr=topics)
 | Macro | Description |
 | --- | --- |
+| [ApproximateWire.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/ApproximateWire.FCMacro) | [Approximate wires](https://forum.freecad.org/viewtopic.php?t=104519) |
 | [CAMDeepCopy.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/CAMDeepCopy.FCMacro) | [Deep copy of Path operation and set expressions](https://forum.freecad.org/viewtopic.php?t=97562) |
 | [ColorRandom.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/ColorRandom.FCMacro) | [Set random color for selected objects](https://forum.freecad.org/viewtopic.php?t=93991) |
 | [ConsoleToggle.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/ConsoleToggle.FCMacro) | [Toggle panels Python console and Report view](https://forum.freecad.org/viewtopic.php?t=94589) |
