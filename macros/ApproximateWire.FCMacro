@@ -49,7 +49,9 @@ def approximateWire(wire, tolerance=0.1):
 
             if isinstance(edge.Curve, Part.BSplineCurve):
                 # Convert BSpline to arcs
-                curves = edge.Curve.toBiArcs(tolerance)
+                curve = edge.Curve
+                trimmed_curve = curve.trim(*edge.ParameterRange)
+                curves = trimmed_curve.toBiArcs(tolerance)
                 for curve in curves:
                     processed_edges.append(curve.toShape())
             else:
@@ -62,11 +64,13 @@ def approximateWire(wire, tolerance=0.1):
 
     # Reassemble the wire if any edges were replaced
     if modified:
-        return Part.Wire(processed_edges)
+        #return Part.Wire(processed_edges)
+        return Part.Wire(Part.__sortEdges__(processed_edges))
     return wire
 
 print()
 print("--- Macro to approximate wires ---")
+print(f"  tolerance = {tolerance}")
 
 selection = FreeCADGui.Selection.getSelection()
 
@@ -89,4 +93,8 @@ for obj in selection:
     newName = obj.Name + "_approximate"
     newObj = doc.addObject("Part::Feature", newName)
     newObj.Shape = newShape
+    
+    print()
+    print(f"  {obj.Label}")
+    print(f"    Edges {len(obj.Shape.Edges)} -> {len(newObj.Shape.Edges)}")
     
