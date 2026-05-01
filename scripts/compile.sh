@@ -1,8 +1,8 @@
 #!/bin/bash
 
-pathBuild="/home/user/projects/FreeCAD_build"
-pathSrc="/home/user/projects/FreeCAD_src"
-pathGit="/home/user/projects/FreeCAD_git"
+pathBuild="/home/user/projects/FreeCAD_build"  # build to this dir
+pathSrc="/home/user/projects/FreeCAD_src"      # build from this dir
+pathGit="/home/user/projects/FreeCAD_git"      # contains .git
 myBranch="CAM3"
 
 # Colors
@@ -10,6 +10,10 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m'
 
+# remove simlink if present
+if [ -h "${pathSrc}/.git" ]; then
+    unlink "${pathSrc}/.git"
+fi
 
 if [ -d "${pathGit}/.git" ]; then
     branch=`git -C "${pathGit}" branch --show-current`
@@ -32,15 +36,14 @@ fi
 
 arg2="$2"
 
-# if [ "$arg2" == "" ]; then
-#     echo
-#     read -p "Need to reconfigure? (y/N): " reconf
-# fi
-
-if [[ "$arg2" == "configure" ]] || [[ "$reconf" == "y" ]] || [[ "$reconf" == "Y" ]]; then
+if [[ "$arg2" == "c" ]] || [[ "$arg2" == "config" ]] || [[ "$arg2" == "configure" ]] \
+|| [[ "$reconf" == "y" ]] || [[ "$reconf" == "Y" ]]; then
     echo
     echo "cmake configure"
     echo
+
+    # create simlink before reconfigure
+    ln -s "${pathGit}/.git" "${pathSrc}/.git"
 
     cmake \
         -D CMAKE_BUILD_TYPE=Release \
