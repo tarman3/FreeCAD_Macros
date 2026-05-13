@@ -31,7 +31,14 @@ fi
 
 if [ "${pathSrc}" != "${pathGit}" ]; then
     echo
-    rsync --verbose --checksum --recursive --delete --exclude=".git" --exclude=".ruff_cache" --exclude="*.orig" "${pathGit}/" "${pathSrc}/"
+    rsync_log=`rsync --verbose --checksum --recursive --delete --exclude-from="compile_exclude" "${pathGit}/" "${pathSrc}/"`
+    echo "${rsync_log}"
+    if [[ "${rsync_log}" == *"CMakeLists"* ]]; then
+        echo
+        echo -e "${GREEN}Force reconfigure and create simlink to .git${NC}"
+        sleep 1
+        reconf="y"
+    fi
 fi
 
 arg2="$2"
@@ -42,7 +49,7 @@ if [[ "$arg2" == "c" ]] || [[ "$arg2" == "config" ]] || [[ "$arg2" == "configure
     echo "cmake configure"
     echo
 
-    # create simlink before reconfigure
+    # create simlink before reconfigure, which allow to update about info
     ln -s "${pathGit}/.git" "${pathSrc}/.git"
 
     cmake \

@@ -1,0 +1,4 @@
+.git
+.ruff_cache
+*.orig
+customtitlebarkit/export.h
