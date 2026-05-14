@@ -1,22 +1,18 @@
 
-__title__ = "Export raw gcode 2"
-__doc__ = "Save to file raw gcode from selected operations"
+__title__ = "Export raw gcode 3"
+__doc__ = "Save to file raw gcode (with tabs) from selected operations"
 __url__ = "https://forum.freecad.org/viewtopic.php?t=99970"
 
 import FreeCAD
 import FreeCADGui
 import PathScripts.PathUtils as PathUtils
-import Path
 import os
 
 
-def getGcode(obj):
-    path = PathUtils.getPathWithPlacement(obj)
-
-    return path.Commands
+tab = "    "
 
 
-def save2file(gcode):
+def save2file(string):
     doc = FreeCAD.activeDocument()
     doc_filename = doc.FileName
     dirname = os.path.dirname(doc_filename)
@@ -25,22 +21,25 @@ def save2file(gcode):
     file_path = os.path.join(dirname, filename)
 
     with open(file_path, "w") as f:
-        f.write(gcode)
+        f.write(string)
 
-    print(f"Export pseudo gcode to file:\n{file_path}")
+    print()
+    print(f"Export pseudo gcode to file: {file_path}")
 
 
 selection = FreeCADGui.Selection.getSelection()
 
-commands = []
+output = ""
 for obj in selection:
     if obj.isDerivedFrom("Path::Feature") and obj.Path.Commands:
-        commands.extend(getGcode(obj))
+        path = PathUtils.getPathWithPlacement(obj)
+        for i, cmd in enumerate(path.Commands):
+            if i == 0:
+                output += cmd.toGCode() + "\n"
+            else:
+                output += tab + cmd.toGCode() + "\n"
 
-if commands:
-    path = Path.Path(commands)
-    gcode = path.toGCode()
-    save2file(gcode)
-
-if not commands:
-    print("Nothing selected")
+if output:
+    save2file(output)
+else:
+    print("Nothing to save")

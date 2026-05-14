@@ -21,8 +21,9 @@
 | [MoveToOrigin.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/MoveToOrigin.FCMacro) | Move to origin |
 | [Offset2DWires.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/Offset2DWires.FCMacro) | [Create 2D offset for each wire](https://forum.freecad.org/viewtopic.php?t=) |
 | [OuterWire.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/OuterWire.FCMacro) | Create outer wire |
-| [PathExportGcode.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/PathExportGcode.FCMacro) | [Export pseudo-gcode](https://forum.freecad.org/viewtopic.php?t=99970) |
-| [PathExportGcode2.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/PathExportGcode2.FCMacro) | [Export pseudo-gcode 2](https://forum.freecad.org/viewtopic.php?t=99970) |
+| [PathExportGcode1.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/PathExportGcode1.FCMacro) | [Export raw gcode](https://forum.freecad.org/viewtopic.php?t=99970) |
+| [PathExportGcode2.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/PathExportGcode2.FCMacro) | [Export raw gcode 2](https://forum.freecad.org/viewtopic.php?t=99970) |
+| [PathExportGcode3.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/PathExportGcode3.FCMacro) | [Export raw gcode 3](https://forum.freecad.org/viewtopic.php?t=99970) |
 | [PathFromShape.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/PathFromShape.FCMacro) | [Path From Shape](https://forum.freecad.org/viewtopic.php?t=93896) |
 | [PathLength.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/PathLength.FCMacro) | [Measure length of selected Path](https://forum.freecad.org/viewtopic.php?t=98509) |
 | [PathPointsDistance.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/PathPointsDistance.FCMacro) | [Measure distance between Path nodes ](https://forum.freecad.org/viewtopic.php?t=97759) |

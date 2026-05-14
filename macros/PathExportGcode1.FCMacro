@@ -1,13 +1,13 @@
 
-__title__ = "Export pseudo-gcode"
-__doc__ = "Save commands from inspect dialog to file"
+__title__ = "Export raw gcode"
+__doc__ = "Save to files raw gcode from selected operations"
 __url__ = "https://forum.freecad.org/viewtopic.php?t=99970"
 
 import FreeCAD
 import FreeCADGui
 import PathScripts.PathUtils as PathUtils
 import os
-import sys
+
 
 def main(obj):
     doc = FreeCAD.activeDocument()
@@ -33,9 +33,9 @@ def main(obj):
 
 selection = FreeCADGui.Selection.getSelection()
 
-if len(selection):
+if selection:
     for obj in selection:
-        if obj.isDerivedFrom("Path::Feature") and len(obj.Path.Commands):
+        if obj.isDerivedFrom("Path::Feature") and obj.Path.Commands:
             main(obj)
 else:
     print("Nothing selected")
