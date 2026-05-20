@@ -31,12 +31,12 @@ fi
 
 if [ "${pathSrc}" != "${pathGit}" ]; then
     echo
-    rsync_log=`rsync --verbose --checksum --recursive --delete --exclude-from="compile_exclude" "${pathGit}/" "${pathSrc}/"`
+    rsync_log=`rsync --verbose --checksum --recursive --delete --exclude-from="${pathBuild}/compile_exclude" "${pathGit}/" "${pathSrc}/"`
     echo "${rsync_log}"
     if [[ "${rsync_log}" == *"CMakeLists"* ]]; then
         echo
         echo -e "${GREEN}Force reconfigure and create simlink to .git${NC}"
-        sleep 1
+        sleep 2
         reconf="y"
     fi
 fi
