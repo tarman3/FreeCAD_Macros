@@ -18,7 +18,6 @@
 | [LengthWires.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/LengthWires.FCMacro) | Calculate length of selected wires |
 | [MouseButtonTest.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/MouseButtonTest.FCMacro) | Test mouse buttons |
 | [MouseFilter.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/MouseFilter.FCMacro) | [Modify mousewheel-arrowkey events for Qspinboxes](https://forum.freecad.org/viewtopic.php?t=92512) |
-| [MoveToOrigin.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/MoveToOrigin.FCMacro) | Move to origin |
 | [Offset2DWires.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/Offset2DWires.FCMacro) | [Create 2D offset for each wire](https://forum.freecad.org/viewtopic.php?t=) |
 | [OuterWire.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/OuterWire.FCMacro) | Create outer wire |
 | [PathExportGcode1.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/PathExportGcode1.FCMacro) | [Export raw gcode](https://forum.freecad.org/viewtopic.php?t=99970) |
@@ -44,7 +43,6 @@
 | [TransparencyRemove.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/TransparencyRemove.FCMacro) | [Remove transparency from selected objects](https://forum.freecad.org/viewtopic.php?t=96465) |
 | [TreeMoveDown.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/TreeMoveDown.FCMacro) | [Move down selected objects in group](https://forum.freecad.org/viewtopic.php?t=97244) |
 | [TreeMoveUp.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/TreeMoveUp.FCMacro) | [Move up selected objects in group](https://forum.freecad.org/viewtopic.php?t=97244) |
-| [VisibilityToggle.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/VisibilityToggle.FCMacro) | [Toggle visibility](https://forum.freecad.org/viewtopic.php?t=94541) |
 | [Voronoi_Random_Patern.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/Voronoi_Random_Patern.FCMacro) | Create Voronoi Pattern on Face |
 | [Wire2ProfilesBallend.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/Wire2ProfilesBallend.FCMacro) | [Create gcode for processing sweeped wire by Ballend](https://forum.freecad.org/viewtopic.php?t=94642) |
 | [Wire2ProfilesEndmill.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/Wire2ProfilesEndmill.FCMacro) | [Create gcode for processing sweeped wire by Endmill](https://forum.freecad.org/viewtopic.php?t=94642) |

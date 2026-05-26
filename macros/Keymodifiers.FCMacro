@@ -1,0 +1,20 @@
+from PySide.QtCore import Qt
+from PySide.QtWidgets import QApplication
+
+def getKeyboardModifiers():
+    result = []
+    k = int(QApplication.queryKeyboardModifiers().value)
+    print("k", k)
+    if k == int(Qt.NoModifier.value):
+        result.append('NONE')
+    if k & int(Qt.AltModifier.value):
+        result.append('ALT')
+    if k & int(Qt.ShiftModifier.value):
+        result.append('SHIFT')
+    if k & int(Qt.ControlModifier.value):
+        result.append('CTRL')
+    return result
+
+kmods=getKeyboardModifiers()
+
+print("kmods", kmods)
