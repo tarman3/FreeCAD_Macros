@@ -70,7 +70,8 @@ for branch in ${array[@]}; do
         if [ "$result" == "0" ]; then
             rebased=$((rebased+1))
         else
-            echo -n "Abort and continue rebase next branch (N/y) ? "
+            echo
+            echo -n "Abort rebase and continue rebase next branch (N/y) ? "
             read answer
             if [[ "$answer" == "y" ]] || [[ "$answer" == "Y" ]]; then
                 git rebase --abort

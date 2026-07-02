@@ -3,10 +3,11 @@ __title__ = "Toggle panels Python console and Report view"
 __doc__ = "Selected objects sent to console and can be accessed by variables obj and objs"
 __url__ = "https://forum.freecad.org/viewtopic.php?t=94589"
 
-
+import FreeCADGui
 from PySide import QtGui
 
-mw=Gui.getMainWindow()
+
+mw=FreeCADGui.getMainWindow()
 
 panelConsole = mw.findChild(QtGui.QDockWidget, 'Python console')
 if not panelConsole:
@@ -23,17 +24,33 @@ else:
     panelReport.show()
     panelConsole.show()
 
-
-objs = FreeCADGui.Selection.getSelection()
-
-if objs:
-    cmd  = f'''objs = FreeCADGui.Selection.getSelection()
-print("{len(objs)} objects (objs) sent to console:")
-i=0
-for obj in objs:
-    print("   ", f"objs[{{i}}]", "   ",obj.Name, "   ", obj.TypeId, sep="")
-    i += 1
 print()
-print("List of objects is available by variable: objs")
-print("Last object is available by variable: obj", "\\n")'''
-    Gui.doCommandGui(cmd)
+print("<<<<< Macro: Toggle panels Python console and Report view >>>>>")
+
+selection = FreeCADGui.Selection.getSelectionEx()
+
+if selection:
+    subs = []
+    print(f"    {len(selection)} objects (objs) sent to console:")
+    for i, sel in enumerate(selection):
+        obj = sel.Object
+        subs.extend(sel.SubObjects)
+        print(f"        objs[{i}]   {obj.Name}   {obj.TypeId}")
+    print()
+    print("    List of objects is available by variable:         objs")
+    print("    Last selected object is available by variable:    obj")
+    print("    List of sub shapes is available by variable:      subs")
+    print("    Last selected sub shape is available by variable: sub")
+
+    FreeCADGui.doCommand("selection = FreeCADGui.Selection.getSelectionEx()")
+    FreeCADGui.doCommand("obj = shp = sub = None")
+    FreeCADGui.doCommand("objs = []")
+    FreeCADGui.doCommand("shps = []")
+    FreeCADGui.doCommand("subs = []")
+    FreeCADGui.doCommand("""for sel in selection:
+    objs.append(sel.Object)
+    if hasattr(sel.Object, "Shape"):
+        shps.append(sel.Object.Shape)
+    subs.extend(sel.SubObjects)""")
+    FreeCADGui.doCommand("if objs: obj = objs[-1]")
+    FreeCADGui.doCommand("if subs: sub = subs[-1]")
