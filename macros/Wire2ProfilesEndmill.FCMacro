@@ -31,9 +31,7 @@ step = 0                 # Distance between points on wire
 roughOffset = 0          # Offset for rough mill
                          # Set negative or zero value to read value from base Profile.OffsetExtra
 
-removeStartMoves = 3     # Remove n commands from the begin of each step (default 3)
-removeEndMoves = 2       # Remove n commands from the end of each step (default 2)
-repeatLastStep = False   # Repeat last step (default False; set True for "helix" path)
+removeRetracts = True    # Remove retract moves from each profile
 
 
 def rndVec(vector, prec=1):
@@ -232,17 +230,20 @@ else:
             cmdStepTitle = Path.Command(f"(Wire2Profiles{toolType} {counter} Depth={round(finalDepth,2)} Offset={round(offsetExtra,2)})")
             print(f"  {cmdStepTitle}")
             commandlist.append(cmdStepTitle)
-            if counter == 1:
-                commandlist.extend(tempOp.Path.Commands[2:-removeEndMoves])
-            else:
-                commandlist.extend(tempOp.Path.Commands[2+removeStartMoves:-removeEndMoves])
+            newCmds = tempOp.Path.Commands
 
-        if repeatLastStep:
-            # Repeat last Profile
-            commandlist.extend(tempOp.Path.Commands[2+removeStartMoves:])
-        elif removeEndMoves > 0:
-            # Return last move to clearance height
-            commandlist.extend(tempOp.Path.Commands[-removeEndMoves:])
+            if removeRetracts:
+                if counter > 1:
+                    while newCmds[0].Name not in Path.Geom.CmdMoveMill:
+                        # remove last retract movements
+                        del newCmds[0]
+                while newCmds[-1].Name not in Path.Geom.CmdMoveMill:
+                    # remove last retract movements
+                    del newCmds[-1]
+
+            commandlist.extend(newCmds)
+
+        commandlist.append(Path.Command("G0", {"Z": baseOp.ClearanceHeight.Value}))
 
         # Delete copy of Profile operation
         FreeCAD.ActiveDocument.removeObject(tempOp.Name)

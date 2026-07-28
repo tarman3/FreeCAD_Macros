@@ -28,7 +28,6 @@
 | [PathPointsDistance.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/PathPointsDistance.FCMacro) | [Measure distance between Path nodes ](https://forum.freecad.org/viewtopic.php?t=97759) |
 | [PointsZ.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/PointsZ.FCMacro) | [Colorize points by Z](https://forum.freecad.org/viewtopic.php?t=94278) |
 | [ProbePointsFromFace.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/ProbePointsFromFace.FCMacro) | Get points from Face |
-| [RecomputesFrozen.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/RecomputesFrozen.FCMacro) | [RecomputesFrozen](https://forum.freecad.org/viewtopic.php?t=101298) |
 | [RectangleTrimex.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/RectangleTrimex.FCMacro) | [Rectangle Trimex](https://forum.freecad.org/viewtopic.php?t=94761) |
 | [SelectAllEdgesFromFace.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/SelectAllEdgesFromFace.FCMacro) | [Select all edges from face](https://www.patreon.com/collection/657672) |
 | [SelectAllEdgesFromObject.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/SelectAllEdgesFromObject.FCMacro) | [Macro selecting all edges from object](https://forum.freecad.org/viewtopic.php?t=98116) |
