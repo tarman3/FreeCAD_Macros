@@ -1,0 +1,110 @@
+<?xml
+    version = '1.0'
+    encoding = 'UTF-8'
+    standalone = 'no'
+?>
+<package
+    format = '1'
+    xmlns = 'https://wiki.freecad.org/Package_Metadata'
+>
+
+    <!--[ Versions ]―――――――――――――――――――――――――――――――――――――――――――――――――――――――――-->
+
+    <freecadmin>1.0.0</freecadmin>
+    <pythonmin>3.12</pythonmin>
+    <version>2026.07.31</version>
+    <date>2026-07-31</date>
+
+    <!--[ Dependencies ]―――――――――――――――――――――――――――――――――――――――――――――――――――――-->
+
+    <depend
+        type = 'internal'
+    >cam</depend>
+
+    <depend
+        optional = 'true'
+        type = 'internal'
+    >draft</depend>
+
+    <depend
+        optional = 'true'
+        type = 'internal'
+    >mesh</depend>
+
+    <depend
+        optional = 'true'
+        type = 'internal'
+    >sketcher</depend>
+
+    <depend
+        optional = 'true'
+        type = 'internal'
+    >techdraw</depend>
+
+    <depend
+        optional = 'true'
+        type = 'python'
+    >numpy</depend>
+
+    <depend
+        optional = 'true'
+        type = 'python'
+    >scipy</depend>
+
+    <!--[ Info ]―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――-->
+
+    <description>A collection of macros for CAM and G-code generation, selection and geometry helpers, and interface toggles.</description>
+    <name>tarman3 Macros</name>
+
+    <!--[ Tags ]―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――-->
+
+    <tag>Macro</tag>
+    <tag>CAM</tag>
+    <tag>CNC</tag>
+    <tag>Gcode</tag>
+    <tag>Selection</tag>
+
+    <!--[ Maintainers ]――――――――――――――――――――――――――――――――――――――――――――――――――――――-->
+
+    <maintainer
+        email = 'joice501790018@tutamail.com'
+    >tarman3</maintainer>
+
+    <!--[ Authors ]――――――――――――――――――――――――――――――――――――――――――――――――――――――――――-->
+
+    <author
+        email = 'joice501790018@tutamail.com'
+    >tarman3</author>
+
+    <!--[ Licenses ]―――――――――――――――――――――――――――――――――――――――――――――――――――――――――-->
+
+    <license
+        file = 'LICENSE'
+    >MIT</license>
+
+    <!--[ Urls ]―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――-->
+
+    <url
+        branch = 'main'
+        type = 'repository'
+    >https://github.com/tarman3/FreeCAD_Macros</url>
+
+    <url
+        type = 'readme'
+    >https://github.com/tarman3/FreeCAD_Macros/raw/main/README.md</url>
+
+    <url
+        type = 'bugtracker'
+    >https://github.com/tarman3/FreeCAD_Macros/issues</url>
+
+    <!--[ Content ]――――――――――――――――――――――――――――――――――――――――――――――――――――――――――-->
+
+    <content>
+        <other>
+            <name>Macros</name>
+            <description>All macros in the collection. See the README for the full list and a description of each.</description>
+            <subdirectory>macros</subdirectory>
+        </other>
+    </content>
+
+</package>
