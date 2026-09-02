@@ -7,7 +7,7 @@ import FreeCAD
 import FreeCADGui
 import Part
 import Path
-import PathScripts.PathUtils as PathUtils
+from PathScripts import PathUtils
 
 import copy
 import time
@@ -49,9 +49,7 @@ def getWireFromOp(op):
             if isinstance(sub, Part.Edge):
                 pathEdges.append(sub)
             elif isinstance(sub, Part.Face):
-                print("  Error: Profile operation should be created for Edges, not Faces\n")
-                return None
-
+                return sub.OuterWire
     return Part.Wire(Part.__sortEdges__(pathEdges))
 
 def getLimitsPoints(points):
@@ -73,8 +71,7 @@ def getPointsOrder(wireProfile, wirePath):
             return points
         elif Path.Geom.pointsCoincide(vertex.Point, points[-1]):
             return points[::-1]
-    else:
-        print("  Error: Wire not start from base operation\n")
+    print("  Error: Wire not start from base operation\n")
 
 def isWireUpInStart(points):
     for i in range(len(points) - 1):
@@ -207,12 +204,11 @@ else:
         for i, point in enumerate(points):
 
             pVert.z = point.z
-            if i > 0:
-                if not Path.Geom.isRoughly(pVert.z, points[i-1].z):
-                    if pVert.z > points[i-1].z:
-                        isMovingUp = True
-                    elif pVert.z < points[i-1].z:
-                        isMovingUp = False
+            if i > 0 and not Path.Geom.isRoughly(pVert.z, points[i-1].z):
+                if pVert.z > points[i-1].z:
+                    isMovingUp = True
+                elif pVert.z < points[i-1].z:
+                    isMovingUp = False
 
             if isMovingUp is not None and isMovingUpPrev is not None and isMovingUp != isMovingUpPrev:
                 signComp *= -1
