@@ -5,6 +5,7 @@
 # Branches names
 main_branch="main"      # name of the main branch of repository
 default_branch="CAM3"   # return to this branch after all finished successfully
+origin="origin"
 
 # Colors
 GREEN='\033[0;32m'
@@ -42,7 +43,7 @@ this=false
 
 for branch in ${array[@]}; do
     if [ "$branch" == "${main_branch}" ]; then
-        # skip main branch
+        echo "Skip main branch"
         continue
     fi
 
@@ -73,6 +74,13 @@ for branch in ${array[@]}; do
 
     if $this; then
         git checkout "$branch" --quiet
+
+        link=`git rev-parse --abbrev-ref @{upstream}`
+        if [[ "$link" != "$origin"* ]]; then
+            echo "Skip remote branch"
+            continue
+        fi
+
         git rebase ${main_branch}
         result=$?
         if [ "$result" == "0" ]; then
