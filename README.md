@@ -38,6 +38,7 @@
 | [SelectVerticalEdges.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/SelectVerticalEdges.FCMacro) | [Select vertical edges connected by vertical faces](https://www.patreon.com/collection/657672) |
 | [SelectWires.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/SelectWires.FCMacro) | [Select connected wires](https://www.patreon.com/collection/657672) |
 | [SelectionFilter.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/SelectionFilter.FCMacro) | [Toggle selection filter](https://forum.freecad.org/viewtopic.php?t=99939) |
+| [Slots.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/Slots.FCMacro) | [Create slots in selected face](https://forum.freecad.org/viewtopic.php?t=107631) |
 | [Text2ShapeString.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/Text2ShapeString.FCMacro) | [Convert text to ShapeString](https://forum.freecad.org/viewtopic.php?t=94388) |
 | [TransparencyRemove.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/TransparencyRemove.FCMacro) | [Remove transparency from selected objects](https://forum.freecad.org/viewtopic.php?t=96465) |
 | [TreeMoveDown.FCMacro](https://github.com/tarman3/FreeCAD_Macros/blob/main/macros/TreeMoveDown.FCMacro) | [Move down selected objects in group](https://forum.freecad.org/viewtopic.php?t=97244) |

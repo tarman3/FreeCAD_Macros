@@ -42,14 +42,16 @@ all=false
 this=false
 
 for branch in ${array[@]}; do
-    if [ "$branch" == "${main_branch}" ]; then
-        echo "Skip main branch"
-        continue
-    fi
 
     counter=$((counter+1))
     counterf=$(printf "%-2s" "$counter")
     echo
+
+    if [ "$branch" == "${main_branch}" ]; then
+        echo -e "$counterf - ${GREEN}$branch${NC}"
+        echo "Skip main branch"
+        continue
+    fi
 
     if $all; then
         # force confirm for all branches
