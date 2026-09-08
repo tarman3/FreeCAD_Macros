@@ -223,7 +223,9 @@ else:
 
         lastPoint = points[0]
         pVert = copy.copy(points[0])
-        cmdMainTitle = Path.Command(f"(Wire2ProfilesBallend: toolDiam={toolDiam} step={step} roughOffset={roughOffset})")
+        cmdMainTitle = Path.Command(
+            f"(Wire2ProfilesBallend: toolDiam={toolDiam} step={step} roughOffset={roughOffset})"
+        )
         commandlist = [cmdMainTitle]
         counter = 0
         isMovingUp = None
@@ -286,7 +288,9 @@ else:
                 tempOp.recompute()
 
                 counter += 1
-                cmdStepTitle = Path.Command(f"(Wire2Profiles{toolType} {counter} Depth={round(finalDepth,2)} Offset={round(offsetExtra,2)})")
+                cmdStepTitle = Path.Command(
+                    f"(Wire2Profiles{toolType} {counter} Depth={round(finalDepth,2)} Offset={round(offsetExtra,2)})"
+                )
                 print(f"  {cmdStepTitle}")
                 commandlist.append(cmdStepTitle)
                 newCmds = tempOp.Path.Commands
@@ -318,7 +322,7 @@ else:
         WireGcode = Path.Op.Custom.Create(opName, parentJob=job)
         WireGcode.Label = opLabel
         WireGcode.ToolController = baseOp.ToolController
-        WireGcode.ViewObject.Proxy = Path.Op.Gui.Custom.PathOpGui.ViewProvider(WireGcode.ViewObject, res)
+        WireGcode.ViewObject.Proxy = Path.Op.Gui.Base.ViewProvider(WireGcode.ViewObject, res)
         WireGcode.Gcode = [cmd.toGCode() for cmd in commandlist]
         WireGcode.ViewObject.Visibility = True
         WireGcode.ViewObject.Proxy.deleteOnReject = False

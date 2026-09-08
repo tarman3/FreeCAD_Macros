@@ -25,11 +25,14 @@ step = 0.2       # Max vertical or horizontal movement
 inc = step/10    # Step for calculation
 filletRadius = 5
 
-import PathScripts.PathUtils as PathUtils
+import FreeCAD
+import FreeCADGui
+import Path
+from PathScripts import PathUtils
 
 sel = FreeCADGui.Selection.getSelectionEx()
 if not sel:
-    print(f'  Please select base profile in top of fillet')
+    print("  Please select base profile in top of fillet")
 
 else:
     origProfile = [s.Object for s in sel if "Profile" in s.Object.Name][0]
@@ -53,8 +56,6 @@ else:
                     break
     else:
         print(f"  Can not determine radius from selected shape. Used default value {filletRadius}")
-
-    # subBase = sel[0].SubElementNames[0]
 
     # Create copy of Profile
     baseProfile = FreeCAD.ActiveDocument.copyObject(origProfile)
@@ -106,12 +107,9 @@ else:
                 # Get next optimal depth
                 break
         else:
-            print(f"  Macro overlimit B")
+            print("  Macro overlimit B")
 
         if currentDepth <= finalDepth + 0.001: break
-
-
-        # print(f'  depth={currentDepth:.2f} OffsetExtra={offsetExtra:.2f}')
 
         # Set currentDepth and offsetExtra to Profile
         baseProfile.FinalDepth = currentDepth
@@ -123,7 +121,7 @@ else:
         gcode += gcodeCurrent
 
     else:
-        print(f'  Macro overlimit A')
+        print("  Macro overlimit A")
 
     # Delete copy of Profile
     FreeCAD.ActiveDocument.removeObject(baseProfile.Name)
@@ -133,7 +131,7 @@ else:
 
     res = Path.Op.Gui.Custom.Command.res
     filletGcode = Path.Op.Custom.Create("filletGcode")
-    filletGcode.ViewObject.Proxy = Path.Op.Gui.Custom.PathOpGui.ViewProvider(filletGcode.ViewObject, res)
+    filletGcode.ViewObject.Proxy = Path.Op.Gui.Base.ViewProvider(filletGcode.ViewObject, res)
     filletGcode.Gcode = gcode
     filletGcode.ViewObject.Visibility = True
     filletGcode.ViewObject.Proxy.deleteOnReject = False
