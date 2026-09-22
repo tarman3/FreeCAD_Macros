@@ -1,0 +1,76 @@
+
+__title__ = "Create parallel slots in selected horizontal face"
+__doc__ = ""
+__url__ = "https://forum.freecad.org/viewtopic.php?t=107631"
+
+import FreeCAD
+import FreeCADGui
+import Part
+import Path
+from PathScripts import PathUtils
+
+angle = 0        # angle of pattern
+outerOffset = 1  # offset from outer wire, bosses and holes
+slot_depth = 2   # slot depth
+slot_width = 2   # slot width
+slot_step = 3    # distance between slots
+
+
+def getAreaParams():
+    """areaParams() ... return dictionary with pocket's area parameters"""
+    params = {}
+    params["Fill"] = 0
+    params["Coplanar"] = 0
+    params["PocketMode"] = 1
+    params["SectionCount"] = -1
+    params["Angle"] = angle
+    params["PocketStepover"] = slot_width + slot_step
+    params["PocketExtraOffset"] = outerOffset
+    params["ToolRadius"] = slot_width / 2
+    params["SectionTolerance"] = FreeCAD.Base.Precision.confusion() * 10
+    params["PocketMode"] = 5  # Line
+
+    return params
+
+
+def create_horizontal_face(wire, width):
+    """Return a horizontal face sweeping along the wire"""
+    edge = wire.Edges[0]
+    direction = edge.Vertexes[1].Point - edge.Vertexes[0].Point
+    normal = direction.cross(FreeCAD.Vector(0, 0, 1))
+    # offset = normal.normalize() * width / 2
+    offset = normal.normalize() * 0.001  # thin rectangle to apple makeOffset2D
+    e1 = edge.translated(offset)
+    e2 = edge.translated(-offset)
+    e3 = Part.makeLine(e1.Vertexes[0].Point, e2.Vertexes[0].Point)
+    e4 = Part.makeLine(e1.Vertexes[1].Point, e2.Vertexes[1].Point)
+    wire = Part.Wire(Part.__sortEdges__([e1, e2, e3, e4]))
+    slot_wire = wire.makeOffset2D(width / 2)
+
+    return Part.makeFace(slot_wire)
+
+
+for sel in FreeCADGui.Selection.getSelectionEx():
+    face = sel.SubObjects[0]
+    if not isinstance(face, Part.Face):
+        continue
+    obj = sel.Object
+    solid = obj.Shape
+
+    removalshape = face.extrude(FreeCAD.Vector(0, 0, 1))
+    area = Path.Area()
+    area.setPlane(PathUtils.makeWorkplane(removalshape))
+    area.add(removalshape)
+    areaParams = getAreaParams()
+    area.setParams(**areaParams)
+
+    heights = [face.BoundBox.ZMax]
+    sections = area.makeSections(mode=0, project=False, heights=heights)
+    sectionsShapes = [sec.getShape() for sec in sections]
+    wires = [w for sh in sectionsShapes for w in sh.Wires]
+
+    slots_faces = [create_horizontal_face(w, slot_width) for w in wires]
+    slots_ext = [f.extrude(FreeCAD.Vector(0, 0, -slot_depth)) for f in slots_faces]
+
+    obj.ViewObject.Visibility = False
+    Part.show(solid.cut(slots_ext), "Slots")
