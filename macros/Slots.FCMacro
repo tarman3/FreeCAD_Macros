@@ -10,10 +10,13 @@ import Path
 from PathScripts import PathUtils
 
 angle = 0         # angle of pattern
-outer_offset = 1  # offset from outer wire, bosses and holes
+outer_offset = 3  # offset from outer wire, bosses and holes
 slot_depth = 2    # slot depth
 slot_width = 2    # slot width
 slot_step = 3     # distance between slots
+
+extend_along_x = 2 * slot_width + outer_offset  # extend outer wire along X
+extend_along_y = 0  # extend outer wire along Y
 
 
 def getAreaParams():
@@ -33,20 +36,62 @@ def getAreaParams():
     return params
 
 
+def getExtFace(face):
+    """getExtFace(face) ... return rectangular face extended along X"""
+    fbb = face.BoundBox
+
+    p0 = fbb.getPoint(0)
+    p0.x -= extend_along_x
+    p0.y -= extend_along_y
+    p1 = fbb.getPoint(1)
+    p1.x += extend_along_x
+    p1.y -= extend_along_y
+    p2 = fbb.getPoint(2)
+    p2.x += extend_along_x
+    p2.y += extend_along_y
+    p3 = fbb.getPoint(3)
+    p3.x -= extend_along_x
+    p3.y += extend_along_y
+
+    e1 = Part.makeLine(p0, p1)
+    e2 = Part.makeLine(p1, p2)
+    e3 = Part.makeLine(p2, p3)
+    e4 = Part.makeLine(p3, p0)
+
+    ext_wire = Part.Wire([e1, e2, e3, e4])
+    wires = [ext_wire] + getInnerWires(face)
+    ext_face = Part.makeFace(wires, "Part::FaceMakerBullseye")
+
+    return ext_face
+
+
+def getInnerWires(face):
+    """getInnerWires(face) ... return inner wires of face"""
+    outer_wire = face.OuterWire
+    outer_index = [w.hashCode() for w in face.Wires].index(outer_wire.hashCode())
+
+    inner_wires = face.Wires
+    del inner_wires[outer_index]
+
+    return inner_wires
+
+
 for sel in FreeCADGui.Selection.getSelectionEx():
     obj = sel.Object
     face = sel.SubObjects[0]
     if not isinstance(face, Part.Face):
         continue
 
-    removalshape = face.extrude(FreeCAD.Vector(0, 0, 1))
+    ext_face = getExtFace(face)
+
+    removalshape = ext_face.extrude(FreeCAD.Vector(0, 0, 1))
     area = Path.Area()
     area.setPlane(PathUtils.makeWorkplane(removalshape))
     area.add(removalshape)
     area_params = getAreaParams()
     area.setParams(**area_params)
 
-    heights = [face.BoundBox.ZMax]
+    heights = [ext_face.BoundBox.ZMax]
     sections = area.makeSections(mode=0, project=False, heights=heights)
     sections_shapes = [sec.getShape() for sec in sections]
     slots_ext = [f.extrude(FreeCAD.Vector(0, 0, -slot_depth)) for s in sections_shapes for f in s.Faces]
