@@ -5,6 +5,7 @@ __url__ = "https://forum.freecad.org/viewtopic.php?t=107631"
 
 import math
 
+import FreeCAD
 import FreeCADGui
 import Part
 from FreeCAD import Vector
@@ -26,7 +27,7 @@ offset_bottom_y = 0  # offset y for bottom side (positive value increase area)
          p3--------------p2
            |            |
            |  --------  |
-   left    |  --------  |     right
+   left    |  --------  |    right
            |            |
          p0--------------p1
                bottom
@@ -75,48 +76,64 @@ def getInnerWires(face):
 
 def makeSlot(edge):
     """makeSlot(edge) ... return slot (solid) from center edge or wire"""
-    r = slot_width / 2
+    r = slot_width / 2  # arcs radius
     p1 = edge.Vertexes[0].Point
     p2 = edge.Vertexes[1].Point
 
     e1 = Part.makeLine(Vector(p1.x, p1.y - r, p1.z), Vector(p2.x, p2.y - r, p2.z))
-    e2 = Part.Edge(Part.Arc(Vector(p2.x, p2.y - r, p2.z), Vector(p2.x + r, p2.y, p2.z), Vector(p2.x, p2.y + r, p2.z)))
+
+    # right arc
+    arc = Part.Arc(Vector(p2.x, p2.y - r, p2.z), Vector(p2.x + r, p2.y, p2.z), Vector(p2.x, p2.y + r, p2.z))
+    e2 = Part.Edge(arc)
+
     e3 = Part.makeLine(Vector(p2.x, p2.y + r, p2.z), Vector(p1.x, p1.y + r, p1.z))
-    e4 = Part.Edge(Part.Arc(Vector(p1.x, p1.y + r, p1.z), Vector(p1.x - r, p1.y, p1.z), Vector(p1.x, p1.y - r, p1.z)))
+
+    # left arc
+    arc = Part.Arc(Vector(p1.x, p1.y + r, p1.z), Vector(p1.x - r, p1.y, p1.z), Vector(p1.x, p1.y - r, p1.z))
+    e4 = Part.Edge(arc)
 
     return Part.Face(Part.Wire([e1, e2, e3, e4])).extrude(Vector(0, 0, -slot_depth))
 
 
+FreeCAD.ActiveDocument.openTransaction("Slots")  # allows to undo
+
 for sel in FreeCADGui.Selection.getSelectionEx():
     obj = sel.Object
-    face = sel.SubObjects[0]
+    face = sel.SubObjects[0]  # selected face
     if not isinstance(face, Part.Face):
         continue
 
+    # rectangular face extended along X
     ext_face = getExtFace(face)
     # Part.show(ext_face, "ext_face1")
+
+    # negative offset to not intersects with holes
     ext_face = ext_face.makeOffset2D(-outer_offset - slot_width / 2)
     # Part.show(ext_face, "ext_face2")
+
     length = ext_face.Edges[0].Length
     width = ext_face.Edges[1].Length
 
+    # slots number
     nr = math.ceil((width - slot_width)/ (slot_step + slot_width)) + 1
 
     start_x = ext_face.Edges[0].Vertexes[0].Point.x
     end_x = ext_face.Edges[0].Vertexes[1].Point.x
-
     start_y = ext_face.Edges[1].Vertexes[0].Point.y + slot_width / 2
     end_y = ext_face.Edges[1].Vertexes[1].Point.y - slot_width / 2
-    placement = linspace(start_y, end_y, nr - slot_step)
-    print("slots placement", placement)
+    positions = linspace(start_y, end_y, nr - slot_step)  # positions slots along Y
+    print("slots positions", positions)
 
     z = ext_face.Edges[0].Vertexes[0].Point.z
-    wires = [Part.Wire(Part.makeLine(Vector(start_x, y, z), Vector(end_x, y, z))) for y in placement]
+
+    wires = [Part.Wire(Part.makeLine(Vector(start_x, y, z), Vector(end_x, y, z))) for y in positions]
     holes = [Part.Face(w) for w in getInnerWires(ext_face)]
     cwires = [cw for w in wires for cw in w.cut(holes).Wires]
     slots = [makeSlot(w) for w in cwires]
-
     cut_model = obj.Shape.cut(slots)
 
     obj.ViewObject.Visibility = False
-    Part.show(cut_model, "Slots")
+
+    Part.show(cut_model, f"{obj.Label}_Slots")
+
+FreeCAD.ActiveDocument.commitTransaction()  # allows to undo
