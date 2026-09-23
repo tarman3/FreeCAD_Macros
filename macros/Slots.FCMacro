@@ -11,16 +11,18 @@ import Part
 from FreeCAD import Vector
 from numpy import linspace
 
-outer_offset = 2  # offset from outer wire, bosses and holes
+angle = 90  # 0 - slots along X, 90 - solts along Y
+
+outer_offset = 2  # offset from bosses and holes
 slot_depth = 2    # slot depth
 slot_width = 2    # slot width
 slot_step = 2     # minimal distance between slots
 
-offset_left_x = 2 * slot_width + outer_offset  # offset x for left side
-offset_right_x = 2 * slot_width + outer_offset  # offset x for right side
+offset_left_x = slot_width  # offset x for left side
+offset_right_x = slot_width  # offset x for right side
 
-offset_top_y = 0  # offset y for top side (positive value increase area)
-offset_bottom_y = 0  # offset y for bottom side (positive value increase area)
+offset_top_y = -2  # offset y for top side (positive value increase area)
+offset_bottom_y = -2  # offset y for bottom side (positive value increase area)
 
 """
                 top
@@ -35,7 +37,7 @@ offset_bottom_y = 0  # offset y for bottom side (positive value increase area)
 
 
 def getExtFace(face):
-    """getExtFace(face) ... return rectangular face extended along X"""
+    """getExtFace(face) ... return rectangular face extended along X and Y"""
     fbb = face.BoundBox
 
     p0 = fbb.getPoint(0)
@@ -57,21 +59,28 @@ def getExtFace(face):
     e4 = Part.makeLine(p3, p0)
 
     ext_wire = Part.Wire([e1, e2, e3, e4])
-    wires = [ext_wire] + getInnerWires(face)
-    ext_face = Part.makeFace(wires, "Part::FaceMakerBullseye")
 
-    return ext_face
+    return Part.Face(ext_wire)
 
 
-def getInnerWires(face):
-    """getInnerWires(face) ... return inner wires of face"""
+def getHoles(face):
+    """getHoles(face) ... return inner faces with offset"""
     outer_wire = face.OuterWire
     outer_index = [w.hashCode() for w in face.Wires].index(outer_wire.hashCode())
 
     inner_wires = face.Wires
     del inner_wires[outer_index]
 
-    return inner_wires
+    inner_wires_offset = []
+    for w in inner_wires:
+        o1 = Part.Face(w.makeOffset2D(outer_offset))
+        o2 = Part.Face(w.makeOffset2D(-outer_offset))
+        if o1.Area > o2.Area:
+            inner_wires_offset.append(o1)
+        else:
+            inner_wires_offset.append(o2)
+
+    return inner_wires_offset
 
 
 def makeSlot(edge):
@@ -99,17 +108,18 @@ FreeCAD.ActiveDocument.openTransaction("Slots")  # allows to undo
 
 for sel in FreeCADGui.Selection.getSelectionEx():
     obj = sel.Object
-    face = sel.SubObjects[0]  # selected face
+    shape = sel.Object.Shape.rotated(Vector(0,0,0), Vector(0,0,1), angle)
+    face = sel.SubObjects[0].rotated(Vector(0,0,0), Vector(0,0,1), angle)  # selected face
     if not isinstance(face, Part.Face):
         continue
 
     # rectangular face extended along X
     ext_face = getExtFace(face)
-    # Part.show(ext_face, "ext_face1")
+    # Part.show(ext_face, "ext_face")
 
     # negative offset to not intersects with holes
-    ext_face = ext_face.makeOffset2D(-outer_offset - slot_width / 2)
-    # Part.show(ext_face, "ext_face2")
+    holes = getHoles(face)
+    # Part.show(Part.Compound(holes), "holes")
 
     length = ext_face.Edges[0].Length
     width = ext_face.Edges[1].Length
@@ -122,15 +132,19 @@ for sel in FreeCADGui.Selection.getSelectionEx():
     start_y = ext_face.Edges[1].Vertexes[0].Point.y + slot_width / 2
     end_y = ext_face.Edges[1].Vertexes[1].Point.y - slot_width / 2
     positions = linspace(start_y, end_y, nr - slot_step)  # positions slots along Y
-    print("slots positions", positions)
+    # print("start_y", start_y, "  end_y", end_y)
+    # print("slots positions", positions)
 
     z = ext_face.Edges[0].Vertexes[0].Point.z
 
     wires = [Part.Wire(Part.makeLine(Vector(start_x, y, z), Vector(end_x, y, z))) for y in positions]
-    holes = [Part.Face(w) for w in getInnerWires(ext_face)]
+    # Part.show(Part.Compound(wires), "wires")
     cwires = [cw for w in wires for cw in w.cut(holes).Wires]
     slots = [makeSlot(w) for w in cwires]
-    cut_model = obj.Shape.cut(slots)
+    # Part.show(Part.Compound(slots), "slots")
+
+    cut_model = shape.cut(slots)
+    cut_model.rotate(Vector(0,0,0), Vector(0,0,1), -angle)
 
     obj.ViewObject.Visibility = False
 
