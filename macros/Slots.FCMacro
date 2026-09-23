@@ -3,23 +3,23 @@ __title__ = "Create parallel slots in selected horizontal face"
 __doc__ = ""
 __url__ = "https://forum.freecad.org/viewtopic.php?t=107631"
 
-import FreeCAD
+import math
+
 import FreeCADGui
 import Part
-import Path
-from PathScripts import PathUtils
+from FreeCAD import Vector
+from numpy import linspace
 
-angle = 0         # angle of pattern (0 along X axis)
-outer_offset = 3  # offset from outer wire, bosses and holes
+outer_offset = 2  # offset from outer wire, bosses and holes
 slot_depth = 2    # slot depth
 slot_width = 2    # slot width
-slot_step = 3     # distance between slots
+slot_step = 2     # minimal distance between slots
 
 offset_left_x = 2 * slot_width + outer_offset  # offset x for left side
 offset_right_x = 2 * slot_width + outer_offset  # offset x for right side
 
 offset_top_y = 0  # offset y for top side (positive value increase area)
-offset_bottom_y = 1  # offset y for bottom side (positive value increase area)
+offset_bottom_y = 0  # offset y for bottom side (positive value increase area)
 
 """
                 top
@@ -31,22 +31,6 @@ offset_bottom_y = 1  # offset y for bottom side (positive value increase area)
          p0--------------p1
                bottom
 """
-
-def getAreaParams():
-    """areaParams() ... return dictionary with pocket's area parameters"""
-    params = {}
-    params["Fill"] = 0
-    params["Coplanar"] = 0
-    params["PocketMode"] = 1
-    params["SectionCount"] = -1  # get all sections
-    params["Angle"] = angle
-    params["PocketStepover"] = slot_width + slot_step
-    params["PocketExtraOffset"] = outer_offset
-    params["ToolRadius"] = slot_width / 2
-    params["PocketMode"] = 5  # Line
-    params["Thicken"] = True  # create faces
-
-    return params
 
 
 def getExtFace(face):
@@ -89,6 +73,20 @@ def getInnerWires(face):
     return inner_wires
 
 
+def makeSlot(edge):
+    """makeSlot(edge) ... return slot (solid) from center edge or wire"""
+    r = slot_width / 2
+    p1 = edge.Vertexes[0].Point
+    p2 = edge.Vertexes[1].Point
+
+    e1 = Part.makeLine(Vector(p1.x, p1.y - r, p1.z), Vector(p2.x, p2.y - r, p2.z))
+    e2 = Part.Edge(Part.Arc(Vector(p2.x, p2.y - r, p2.z), Vector(p2.x + r, p2.y, p2.z), Vector(p2.x, p2.y + r, p2.z)))
+    e3 = Part.makeLine(Vector(p2.x, p2.y + r, p2.z), Vector(p1.x, p1.y + r, p1.z))
+    e4 = Part.Edge(Part.Arc(Vector(p1.x, p1.y + r, p1.z), Vector(p1.x - r, p1.y, p1.z), Vector(p1.x, p1.y - r, p1.z)))
+
+    return Part.Face(Part.Wire([e1, e2, e3, e4])).extrude(Vector(0, 0, -slot_depth))
+
+
 for sel in FreeCADGui.Selection.getSelectionEx():
     obj = sel.Object
     face = sel.SubObjects[0]
@@ -96,19 +94,29 @@ for sel in FreeCADGui.Selection.getSelectionEx():
         continue
 
     ext_face = getExtFace(face)
+    # Part.show(ext_face, "ext_face1")
+    ext_face = ext_face.makeOffset2D(-outer_offset - slot_width / 2)
+    # Part.show(ext_face, "ext_face2")
+    length = ext_face.Edges[0].Length
+    width = ext_face.Edges[1].Length
 
-    removalshape = ext_face.extrude(FreeCAD.Vector(0, 0, 1))
-    area = Path.Area()
-    area.setPlane(PathUtils.makeWorkplane(removalshape))
-    area.add(removalshape)
-    area_params = getAreaParams()
-    area.setParams(**area_params)
+    nr = math.ceil((width - slot_width)/ (slot_step + slot_width)) + 1
 
-    heights = [ext_face.BoundBox.ZMax]
-    sections = area.makeSections(mode=0, project=False, heights=heights)
-    sections_shapes = [sec.getShape() for sec in sections]
-    slots_ext = [f.extrude(FreeCAD.Vector(0, 0, -slot_depth)) for s in sections_shapes for f in s.Faces]
-    cut_model = obj.Shape.cut(slots_ext)
+    start_x = ext_face.Edges[0].Vertexes[0].Point.x
+    end_x = ext_face.Edges[0].Vertexes[1].Point.x
+
+    start_y = ext_face.Edges[1].Vertexes[0].Point.y + slot_width / 2
+    end_y = ext_face.Edges[1].Vertexes[1].Point.y - slot_width / 2
+    placement = linspace(start_y, end_y, nr - slot_step)
+    print("slots placement", placement)
+
+    z = ext_face.Edges[0].Vertexes[0].Point.z
+    wires = [Part.Wire(Part.makeLine(Vector(start_x, y, z), Vector(end_x, y, z))) for y in placement]
+    holes = [Part.Face(w) for w in getInnerWires(ext_face)]
+    cwires = [cw for w in wires for cw in w.cut(holes).Wires]
+    slots = [makeSlot(w) for w in cwires]
+
+    cut_model = obj.Shape.cut(slots)
 
     obj.ViewObject.Visibility = False
     Part.show(cut_model, "Slots")
