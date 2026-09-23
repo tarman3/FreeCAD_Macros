@@ -9,15 +9,28 @@ import Part
 import Path
 from PathScripts import PathUtils
 
-angle = 0         # angle of pattern
+angle = 0         # angle of pattern (0 along X axis)
 outer_offset = 3  # offset from outer wire, bosses and holes
 slot_depth = 2    # slot depth
 slot_width = 2    # slot width
 slot_step = 3     # distance between slots
 
-extend_along_x = 2 * slot_width + outer_offset  # extend outer wire along X
-extend_along_y = 0  # extend outer wire along Y
+offset_left_x = 2 * slot_width + outer_offset  # offset x for left side
+offset_right_x = 2 * slot_width + outer_offset  # offset x for right side
 
+offset_top_y = 0  # offset y for top side (positive value increase area)
+offset_bottom_y = 1  # offset y for bottom side (positive value increase area)
+
+"""
+                top
+         p3--------------p2
+           |            |
+           |  --------  |
+   left    |  --------  |     right
+           |            |
+         p0--------------p1
+               bottom
+"""
 
 def getAreaParams():
     """areaParams() ... return dictionary with pocket's area parameters"""
@@ -41,17 +54,17 @@ def getExtFace(face):
     fbb = face.BoundBox
 
     p0 = fbb.getPoint(0)
-    p0.x -= extend_along_x
-    p0.y -= extend_along_y
+    p0.x -= offset_left_x
+    p0.y -= offset_bottom_y
     p1 = fbb.getPoint(1)
-    p1.x += extend_along_x
-    p1.y -= extend_along_y
+    p1.x += offset_right_x
+    p1.y -= offset_bottom_y
     p2 = fbb.getPoint(2)
-    p2.x += extend_along_x
-    p2.y += extend_along_y
+    p2.x += offset_right_x
+    p2.y += offset_top_y
     p3 = fbb.getPoint(3)
-    p3.x -= extend_along_x
-    p3.y += extend_along_y
+    p3.x -= offset_left_x
+    p3.y += offset_top_y
 
     e1 = Part.makeLine(p0, p1)
     e2 = Part.makeLine(p1, p2)
