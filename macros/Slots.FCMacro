@@ -168,10 +168,13 @@ for sel in FreeCADGui.Selection.getSelectionEx():
     lines = [Part.makeLine(Vector(start_x, y, z), Vector(end_x, y, z)) for y in positions]
     # Part.show(Part.Compound(lines), "lines")
 
-    gaps = []  # list of not connected gaps
+    gaps = []  # list of gaps
     cwires = [w for line in lines for w in processLine(line, holes)]
     # Part.show(Part.Compound(cwires), "cwires")
-    print("  Minimal not connected gaps:", sorted(gaps)[:10])
+    print()
+    print("  Minimal gaps:", sorted(gaps)[:10])
+    print()
+    print("  Minimal slots length:", sorted(round(w.Length, 2) for w in cwires)[:10])
 
     slots = [makeSlot(w) for w in cwires]
     # Part.show(Part.Compound(slots), "slots")
