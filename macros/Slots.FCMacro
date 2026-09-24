@@ -77,10 +77,7 @@ def getHoles(face):
     for w in inner_wires:
         o1 = Part.Face(w.makeOffset2D(outer_offset))
         o2 = Part.Face(w.makeOffset2D(-outer_offset))
-        if o1.Area > o2.Area:
-            holes.append(o1)
-        else:
-            holes.append(o2)
+        holes.append(max((o1, o2), key=lambda o: o.Area))
 
     return holes
 
@@ -109,26 +106,27 @@ def makeSlot(edge):
 def processLine(line, holes):
     """processLine(line, holes) ... return wire without intersection with holes"""
     edges = Part.Wire(line).cut(holes).Edges
+    sedges = sorted(edges, key=lambda e: e.Vertexes[0].X)
 
-    edges = sorted(edges, key=lambda e: e.Vertexes[0].X)
     result = []
-    for i in range(len(edges) - 1):
-        if edges[i].distToShape(edges[i + 1])[0] <= connect_gap:
-            edges[i + 1] = combineEdges(edges[i], edges[i + 1])
+    for i in range(len(sedges) - 1):
+        dist = sedges[i].distToShape(sedges[i + 1])[0]
+        if dist <= connect_gap:
+            sedges[i + 1] = combineEdges(sedges[i], sedges[i + 1])
         else:
-            result.append(Part.Wire(edges[i]))
-    result.append(Part.Wire(edges[-1]))
+            gaps.append(math.ceil(dist * 1000) / 1000)
+            result.append(Part.Wire(sedges[i]))
+    result.append(Part.Wire(sedges[-1]))
 
     return [w for w in result if w.Length >= exclude_shorter]
 
 
 def combineEdges(edge1, edge2):
-    """combineEdges(edge1, edge2) ... return edge which is sum of two edges"""
-    ps = [v.Point for e in (edge1, edge2) for v in e.Vertexes]
-    grouped_points = ((ps[0], ps[2]), (ps[0], ps[3]), (ps[1], ps[2]), (ps[1], ps[3]))
-    p0, p1 = max(grouped_points, key=lambda g: (g[1] - g[0]).Length)
+    """combineEdges(edge1, edge2) ... return edge created between farest points of edges"""
+    points = [v.Point for e in (edge1, edge2) for v in e.Vertexes]
+    points_sorted = sorted(points, key=lambda p: p.x)
 
-    return Part.makeLine(p0, p1)
+    return Part.makeLine(points_sorted[0], points_sorted[-1])
 
 
 print()
@@ -153,30 +151,33 @@ for sel in FreeCADGui.Selection.getSelectionEx():
     # Part.show(Part.Compound(holes), "holes")
 
     # slots number
-    width = ext_face.Edges[1].Length
-    nr = math.ceil((width - slot_width)/ (slot_step + slot_width)) + 1
+    y_length = ext_face.Edges[1].Length
+    nr = math.ceil((y_length - slot_width)/ (slot_step + slot_width)) + 1
 
-    start_x = ext_face.Edges[0].Vertexes[0].Point.x
-    end_x = ext_face.Edges[0].Vertexes[1].Point.x
-    start_y = ext_face.Edges[1].Vertexes[0].Point.y + slot_width / 2
-    end_y = ext_face.Edges[1].Vertexes[1].Point.y - slot_width / 2
+    start_x = ext_face.Vertexes[0].X
+    end_x = ext_face.Vertexes[1].X
+    start_y = ext_face.Vertexes[0].Y + slot_width / 2
+    end_y = ext_face.Vertexes[3].Y - slot_width / 2
     positions = linspace(start_y, end_y, nr)  # positions slots along Y
-    print("  slots number", len(positions))
-    print("  slots positions", [round(float(y), 2) for y in positions])
+    print("  Lines number:", len(positions))
+    print("  Lines positions:", [round(float(y), 2) for y in positions])
 
-    z = ext_face.Edges[0].Vertexes[0].Point.z
+    z = ext_face.BoundBox.ZMax
 
+    # lines along face
     lines = [Part.makeLine(Vector(start_x, y, z), Vector(end_x, y, z)) for y in positions]
     # Part.show(Part.Compound(lines), "lines")
 
+    gaps = []  # list of not connected gaps
     cwires = [w for line in lines for w in processLine(line, holes)]
     # Part.show(Part.Compound(cwires), "cwires")
+    print("  Minimal not connected gaps:", sorted(gaps)[:10])
 
     slots = [makeSlot(w) for w in cwires]
     # Part.show(Part.Compound(slots), "slots")
 
-    cut_model = shape.cut(slots)
-    cut_model.rotate(Vector(0, 0, 0), Vector(0, 0, 1), -angle)
+    cut_model = shape.cut(slots)  # cut model by slots
+    cut_model.rotate(Vector(0, 0, 0), Vector(0, 0, 1), -angle)  # return original rotation
 
     obj.ViewObject.Visibility = False
 
