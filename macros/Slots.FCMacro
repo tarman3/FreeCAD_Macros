@@ -11,7 +11,7 @@ import Part
 from FreeCAD import Vector
 from numpy import linspace
 
-angle = 0            # 0 - slots along X, 90 - solts along Y
+angle = 90            # 0 - slots along X, 90 - solts along Y
 
 connect_gap = 5      # connect slot if gap less than this value
 exclude_shorter = 2  # skip slot with length shorter than this value
@@ -26,6 +26,8 @@ offset_right_x = slot_width  # offset x for right side
 
 offset_top_y = -2  # offset y for top side (positive value increase area)
 offset_bottom_y = -2  # offset y for bottom side (positive value increase area)
+
+show_slot_center_line = True
 
 """
                             top
@@ -170,7 +172,11 @@ for sel in FreeCADGui.Selection.getSelectionEx():
 
     gaps = []  # list of gaps
     cwires = [w for line in lines for w in processLine(line, holes)]
-    # Part.show(Part.Compound(cwires), "cwires")
+    if show_slot_center_line:
+        cwires_comp = Part.Compound(cwires)
+        cwires_comp.rotate(Vector(0, 0, 0), Vector(0, 0, 1), -angle)
+        Part.show(cwires_comp, "cwires")
+
     print()
     print("  Minimal gaps:", sorted(gaps)[:10])
     print()
