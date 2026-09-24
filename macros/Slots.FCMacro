@@ -1,6 +1,6 @@
 
 __title__ = "Create parallel slots in selected horizontal face"
-__doc__ = ""
+__doc__ = "Select face and run macro"
 __url__ = "https://forum.freecad.org/viewtopic.php?t=107631"
 
 import math
@@ -11,12 +11,15 @@ import Part
 from FreeCAD import Vector
 from numpy import linspace
 
-angle = 90  # 0 - slots along X, 90 - solts along Y
+angle = 0            # 0 - slots along X, 90 - solts along Y
 
-outer_offset = 2  # offset from bosses and holes
-slot_depth = 2    # slot depth
-slot_width = 2    # slot width
-slot_step = 2     # minimal distance between slots
+connect_gap = 5      # connect slot if gap less than this value
+exclude_shorter = 2  # skip slot with length shorter than this value
+
+outer_offset = 2     # offset from bosses and holes
+slot_depth = 2       # slot depth
+slot_width = 2       # slot width
+slot_step = 2        # minimal distance between slots
 
 offset_left_x = slot_width  # offset x for left side
 offset_right_x = slot_width  # offset x for right side
@@ -25,16 +28,15 @@ offset_top_y = -2  # offset y for top side (positive value increase area)
 offset_bottom_y = -2  # offset y for bottom side (positive value increase area)
 
 """
-                top
-         p3--------------p2
-           |            |
-           |  --------  |
-   left    |  --------  |    right
-           |            |
-         p0--------------p1
-               bottom
+                            top
+                     p3--------------p2
+       ^               |  --------  |
+       |         left  |  --------  |  right
+     y |               |  --------  |
+       |             p0--------------p1
+        ------>            bottom
+          x
 """
-
 
 def getExtFace(face):
     """getExtFace(face) ... return rectangular face extended along X and Y"""
@@ -71,16 +73,16 @@ def getHoles(face):
     inner_wires = face.Wires
     del inner_wires[outer_index]
 
-    inner_wires_offset = []
+    holes = []
     for w in inner_wires:
         o1 = Part.Face(w.makeOffset2D(outer_offset))
         o2 = Part.Face(w.makeOffset2D(-outer_offset))
         if o1.Area > o2.Area:
-            inner_wires_offset.append(o1)
+            holes.append(o1)
         else:
-            inner_wires_offset.append(o2)
+            holes.append(o2)
 
-    return inner_wires_offset
+    return holes
 
 
 def makeSlot(edge):
@@ -104,6 +106,35 @@ def makeSlot(edge):
     return Part.Face(Part.Wire([e1, e2, e3, e4])).extrude(Vector(0, 0, -slot_depth))
 
 
+def processLine(line, holes):
+    """processLine(line, holes) ... return wire without intersection with holes"""
+    edges = Part.Wire(line).cut(holes).Edges
+
+    edges = sorted(edges, key=lambda e: e.Vertexes[0].X)
+    result = []
+    for i in range(len(edges) - 1):
+        if edges[i].distToShape(edges[i + 1])[0] <= connect_gap:
+            edges[i + 1] = combineEdges(edges[i], edges[i + 1])
+        else:
+            result.append(Part.Wire(edges[i]))
+    result.append(Part.Wire(edges[-1]))
+
+    return [w for w in result if w.Length >= exclude_shorter]
+
+
+def combineEdges(edge1, edge2):
+    """combineEdges(edge1, edge2) ... return edge which is sum of two edges"""
+    ps = [v.Point for e in (edge1, edge2) for v in e.Vertexes]
+    grouped_points = ((ps[0], ps[2]), (ps[0], ps[3]), (ps[1], ps[2]), (ps[1], ps[3]))
+    p0, p1 = max(grouped_points, key=lambda g: (g[1] - g[0]).Length)
+
+    return Part.makeLine(p0, p1)
+
+
+print()
+print("<<< Macro create parallel slots in selected horizontal face >>>")
+print()
+
 FreeCAD.ActiveDocument.openTransaction("Slots")  # allows to undo
 
 for sel in FreeCADGui.Selection.getSelectionEx():
@@ -117,37 +148,38 @@ for sel in FreeCADGui.Selection.getSelectionEx():
     ext_face = getExtFace(face)
     # Part.show(ext_face, "ext_face")
 
-    # negative offset to not intersects with holes
+    # negative offset from inner wires to not intersects with holes
     holes = getHoles(face)
     # Part.show(Part.Compound(holes), "holes")
 
-    length = ext_face.Edges[0].Length
-    width = ext_face.Edges[1].Length
-
     # slots number
+    width = ext_face.Edges[1].Length
     nr = math.ceil((width - slot_width)/ (slot_step + slot_width)) + 1
 
     start_x = ext_face.Edges[0].Vertexes[0].Point.x
     end_x = ext_face.Edges[0].Vertexes[1].Point.x
     start_y = ext_face.Edges[1].Vertexes[0].Point.y + slot_width / 2
     end_y = ext_face.Edges[1].Vertexes[1].Point.y - slot_width / 2
-    positions = linspace(start_y, end_y, nr - slot_step)  # positions slots along Y
-    # print("start_y", start_y, "  end_y", end_y)
-    # print("slots positions", positions)
+    positions = linspace(start_y, end_y, nr)  # positions slots along Y
+    print("  slots number", len(positions))
+    print("  slots positions", [round(float(y), 2) for y in positions])
 
     z = ext_face.Edges[0].Vertexes[0].Point.z
 
-    wires = [Part.Wire(Part.makeLine(Vector(start_x, y, z), Vector(end_x, y, z))) for y in positions]
-    # Part.show(Part.Compound(wires), "wires")
-    cwires = [cw for w in wires for cw in w.cut(holes).Wires]
+    lines = [Part.makeLine(Vector(start_x, y, z), Vector(end_x, y, z)) for y in positions]
+    # Part.show(Part.Compound(lines), "lines")
+
+    cwires = [w for line in lines for w in processLine(line, holes)]
+    # Part.show(Part.Compound(cwires), "cwires")
+
     slots = [makeSlot(w) for w in cwires]
     # Part.show(Part.Compound(slots), "slots")
 
     cut_model = shape.cut(slots)
-    cut_model.rotate(Vector(0,0,0), Vector(0,0,1), -angle)
+    cut_model.rotate(Vector(0, 0, 0), Vector(0, 0, 1), -angle)
 
     obj.ViewObject.Visibility = False
 
-    Part.show(cut_model, f"{obj.Label}_Slots")
+    obj_slot = Part.show(cut_model, f"{obj.Label}_Slots")
 
 FreeCAD.ActiveDocument.commitTransaction()  # allows to undo
