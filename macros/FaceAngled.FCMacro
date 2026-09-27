@@ -1,0 +1,65 @@
+
+__title__ = "Create stage for angled face with 3d wire at bottom"
+__doc__ = ""
+__url__ = "https://forum.freecad.org/viewtopic.php?p=907872#p907872"
+
+import math
+import FreeCAD
+import Part
+import Path
+
+def discretizeWire(wire, tolerance=0.01):
+    """discretizeWire(wire) ... discretize any non-line edges with lines."""
+    ps = wire.discretize(Deflection=tolerance)
+    line_edges = [Part.makeLine(ps[i], ps[i + 1]) for i in range(len(ps) - 1)]
+
+    return Part.Wire(line_edges)
+
+
+tol = 0.01
+tool_diameter = 5
+step = 1
+height = 35
+angle = 5
+
+
+FreeCAD.ActiveDocument.openTransaction("macro")  # allows to undo
+doc = FreeCAD.ActiveDocument
+obj = doc.getObject("ProcessShape_1_production002")
+shape = obj.Shape
+
+edges_names = ('Edge48', 'Edge19', 'Edge21', 'Edge23', 'Edge17', 'Edge15', 'Edge7', 'Edge3')
+edges = [shape.getElement(n) for n in edges_names]
+wire = Part.Wire(Part.getSortedClusters(edges)[0])
+#wire = Part.Wire(Part.sortEdges(edges)[0])
+wire = discretizeWire(wire)
+# Part.show(wire, "wire discritized")
+wire = Path.Op.Util.orientWire(wire, True)
+# Part.show(wire, "wire  oriented")
+wall = wire.extrude(FreeCAD.Vector(0, 0, 10))
+# Part.show(wall, "wall")
+
+owires = []
+z = 0
+while z <= height:
+    print("  z", z)
+    offset = tool_diameter / 2 - math.tan(math.radians(5)) * z
+    print("  offset", offset)
+    owall = wall.makeOffsetShape(offset, tolerance=tol, join=2)
+    # Part.show(owall, "owall")
+
+    edges = [e for e in owall.Edges if not Path.Geom.isVertical(e)]
+    print("  edges", len(edges))
+    # Part.show(Part.Compound(edges), "edges compound")
+    owire = Part.Wire(Part.getSortedClusters(edges)[0])
+    print("  owire edges", len(owire.Edges))
+
+    diffz = wire.BoundBox.ZMax - owire.BoundBox.ZMax + z
+    owire.translate(FreeCAD.Vector(0, 0, diffz))
+    #Part.show(owire, "owire")
+    owires.append(owire)
+    z += step
+
+Part.show(Part.Compound(owires), "owires")
+
+FreeCAD.ActiveDocument.commitTransaction()  # allows to undo
