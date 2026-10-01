@@ -1,6 +1,6 @@
 
 __title__ = "Create parallel slots in selected horizontal face"
-__doc__ = "Select face and run macro"
+__doc__ = "Select horizontal faces and run macro"
 __url__ = "https://forum.freecad.org/viewtopic.php?t=107631"
 
 import math
@@ -11,23 +11,26 @@ import Part
 from FreeCAD import Vector
 from numpy import linspace
 
-angle = 90            # 0 - slots along X, 90 - solts along Y
+# default parameters which will be written to VarSet
+parameters = {
+    "Angle": (0, "Group 1 - Direction", "0 - slots along X, 90 - slots along Y"),
 
-connect_gap = 5      # connect slot if gap less than this value
-exclude_shorter = 2  # skip slot with length shorter than this value
+    "ConnectGap": (0, "Group 2", "Connect slot if gap less than this value"),
+    "ExcludeShorter": (0, "Group 2",  "Skip slot with length shorter than this value"),
 
-outer_offset = 2     # offset from bosses and holes
-slot_depth = 2       # slot depth
-slot_width = 2       # slot width
-slot_step = 2        # minimal distance between slots
+    "SlotDepth": (2, "Group 3 - Slot", "Slot depth"),
+    "SlotWidth": (2, "Group 3 - Slot", "Slot width"),
+    "SlotStep": (2, "Group 3 - Slot", "Minimal distance between slots"),
+    "OffsetHoles": (1, "Group 3 - Slot", "Offset from bosses and holes"),
 
-offset_left_x = slot_width  # offset x for left side
-offset_right_x = slot_width  # offset x for right side
+    "OffsetXLeft": (0, "Group 4 - Area", "Offset x for left side"),
+    "OffsetXRight": (0, "Group 4 - Area", "Offset x for right side"),
+    "OffsetYTop": (-1, "Group 4 - Area", "Offset y for top side (positive value increase area)"),
+    "OffsetYBottom": (-1, "Group 4 - Area",  "Offset y for bottom side (positive value increase area)"),
 
-offset_top_y = -2  # offset y for top side (positive value increase area)
-offset_bottom_y = -2  # offset y for bottom side (positive value increase area)
-
-show_slot_center_line = True
+    "ShowSlotCenterLine": (1, "Group 6", "1 - show center line, 0 - hide"),
+    "Tolerance": (0.01, "Group 6", "Uses in cut shape operations"),
+}
 
 """
                             top
@@ -45,16 +48,16 @@ def getExtFace(face):
     fbb = face.BoundBox
 
     p0 = fbb.getPoint(0)
-    p0.x -= offset_left_x
+    p0.x -= slot_width + offset_left_x
     p0.y -= offset_bottom_y
     p1 = fbb.getPoint(1)
-    p1.x += offset_right_x
+    p1.x += slot_width + offset_right_x
     p1.y -= offset_bottom_y
     p2 = fbb.getPoint(2)
-    p2.x += offset_right_x
+    p2.x += slot_width + offset_right_x
     p2.y += offset_top_y
     p3 = fbb.getPoint(3)
-    p3.x -= offset_left_x
+    p3.x -= slot_width + offset_left_x
     p3.y += offset_top_y
 
     e1 = Part.makeLine(p0, p1)
@@ -77,8 +80,8 @@ def getHoles(face):
 
     holes = []
     for w in inner_wires:
-        o1 = Part.Face(w.makeOffset2D(outer_offset))
-        o2 = Part.Face(w.makeOffset2D(-outer_offset))
+        o1 = Part.Face(w.makeOffset2D(offset_holes))
+        o2 = Part.Face(w.makeOffset2D(-offset_holes))
         holes.append(max((o1, o2), key=lambda o: o.Area))
 
     return holes
@@ -107,7 +110,7 @@ def makeSlot(edge):
 
 def processLine(line, holes):
     """processLine(line, holes) ... return wire without intersection with holes"""
-    edges = Part.Wire(line).cut(holes).Edges
+    edges = Part.Wire(line).cut(holes, tolerance).Edges
     sedges = sorted(edges, key=lambda e: e.Vertexes[0].X)
 
     result = []
@@ -135,8 +138,44 @@ print()
 print("<<< Macro create parallel slots in selected horizontal face >>>")
 print()
 
-FreeCAD.ActiveDocument.openTransaction("Slots")  # allows to undo
+doc = FreeCAD.ActiveDocument
+doc.openTransaction("Slots VarSet")  # allows to undo
 
+# Seach VarSet which will keep parameters or create new
+varset_name = "VarSet_Slot"
+for obj in doc.Objects:
+    if obj.Name == varset_name:
+        varset = obj
+        break
+else:
+    varset = doc.addObject('App::VarSet', varset_name)
+
+for key, (value, group, tooltip) in parameters.items():
+    if not hasattr(varset, key):
+        varset.addProperty("App::PropertyFloat", key, group, tooltip)
+        setattr(varset, key, value)
+
+doc.commitTransaction()  # allows to undo
+
+
+doc.openTransaction("Slots")  # allows to undo
+
+# read parameters from varset
+angle = varset.Angle
+connect_gap = varset.ConnectGap
+exclude_shorter = varset.ExcludeShorter
+offset_holes = varset.OffsetHoles
+slot_depth = varset.SlotDepth
+slot_width = varset.SlotWidth
+slot_step = varset.SlotStep
+offset_left_x = varset.OffsetXLeft
+offset_right_x = varset.OffsetXRight
+offset_top_y = varset.OffsetYTop
+offset_bottom_y = varset.OffsetYBottom
+show_slot_center_line = varset.ShowSlotCenterLine
+tolerance = varset.Tolerance
+
+# process selected faces
 for sel in FreeCADGui.Selection.getSelectionEx():
     obj = sel.Object
     shape = sel.Object.Shape.rotated(Vector(0,0,0), Vector(0,0,1), angle)
@@ -175,6 +214,7 @@ for sel in FreeCADGui.Selection.getSelectionEx():
     if show_slot_center_line:
         cwires_comp = Part.Compound(cwires)
         cwires_comp.rotate(Vector(0, 0, 0), Vector(0, 0, 1), -angle)
+        cwires_comp.translate(Vector(0, 0, -slot_depth))
         Part.show(cwires_comp, "cwires")
 
     print()
@@ -185,11 +225,11 @@ for sel in FreeCADGui.Selection.getSelectionEx():
     slots = [makeSlot(w) for w in cwires]
     # Part.show(Part.Compound(slots), "slots")
 
-    cut_model = shape.cut(slots)  # cut model by slots
+    cut_model = shape.cut(slots, tolerance)  # cut model by slots
     cut_model.rotate(Vector(0, 0, 0), Vector(0, 0, 1), -angle)  # return original rotation
 
     obj.ViewObject.Visibility = False
 
     obj_slot = Part.show(cut_model, f"{obj.Label}_Slots")
 
-FreeCAD.ActiveDocument.commitTransaction()  # allows to undo
+doc.commitTransaction()  # allows to undo
