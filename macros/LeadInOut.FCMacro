@@ -1,0 +1,46 @@
+import FreeCAD
+import FreeCADGui
+import Path
+from Path.Dressup.Gui import LeadInOut
+
+arcSize = .125 * 25.4
+
+def main():
+    selection = FreeCADGui.Selection.getSelectionEx()
+    if not selection:
+        print("Nothing selected")
+        return
+
+    base = [
+        (sel.Object, n)
+        for sel in selection
+        for n in sel.SubElementNames
+        if n.startswith("Face")
+    ]
+
+    if not base:
+        print("Face not selected")
+        return
+
+    # Create Profile
+    profile = Path.Op.Profile.Create("Profile")
+    profile.Base = base
+    res = Path.Op.Gui.Profile.Command.res
+    profile.ViewObject.Proxy = Path.Op.Gui.Profile.PathOpGui.ViewProvider(profile.ViewObject, res)
+    profile.processCircles = True
+    profile.processHoles = True
+    profile.processPerimeter = True
+    profile.UseLongestEdge = True
+
+    # Create LeadInOut Dressup
+    lead = LeadInOut.Create(profile, mode=2)
+    lead.clearExpression('RadiusOut')
+    lead.clearExpression('RadiusIn')
+    lead.RadiusOut = arcSize
+    lead.RadiusIn = arcSize
+    lead.OffsetIn = 1
+
+    doc = FreeCAD.activeDocument()
+    doc.recompute()
+
+main()
