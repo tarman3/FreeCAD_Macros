@@ -3,14 +3,14 @@ __title__ = "Create gcode for processing sweeped wire by Endmill"
 __doc__ = ""
 __url__ = "https://forum.freecad.org/viewtopic.php?t=94642"
 
+import copy
+import time
+
 import FreeCAD
 import FreeCADGui
 import Part
 import Path
 from PathScripts import PathUtils
-
-import copy
-import time
 
 """
 1. Create Job
@@ -236,10 +236,10 @@ else:
 
             if removeRetracts:
                 if counter > 1:
-                    while newCmds[0].Name not in Path.Geom.CmdMoveMill:
+                    while newCmds[0].Name not in ("G1", "G2", "G3"):
                         # remove last retract movements
                         del newCmds[0]
-                while newCmds[-1].Name not in Path.Geom.CmdMoveMill:
+                while newCmds[-1].Name not in ("G1", "G2", "G3"):
                     # remove last retract movements
                     del newCmds[-1]
 
