@@ -1,0 +1,123 @@
+# import math
+# import pprint
+import time
+
+import FreeCAD
+import FreeCADGui
+import Part
+import Path
+
+# from FreeCAD import Vector
+from PathScripts import PathUtils
+
+tol=0.1
+
+
+def slots_wires(face, solids, slot_width):
+    lengths = [e.Length for e in face.Edges if Path.Geom.isGreaterEqual(e.Length, slot_width)]
+    offset = min(lengths) / 2 - tol / 10
+    print("offset", offset)
+    
+    # ext = PathUtils.getExtendedFaces(face, min(lengths) / 2, solids, tol=tol)
+    # face = Path.Geom.combineHorizontalFaces(ext, face.BoundBox.ZMin)[0]
+    # face = Path.Geom.combineHorizontalFaces([face], face.BoundBox.ZMin)[0]
+    #Part.show(face, "face")
+    print(1, time.monotonic() - ts)
+    
+    owire = face.OuterWire.makeOffset2D(-offset, join=1)
+    # Part.show(owire, "owire")
+    iwires = [w.makeOffset2D(offset, join=1) for w in face.Wires[1:]]
+
+    print(2, time.monotonic() - ts)
+
+    edges = owire.Edges + [e for w in iwires for e in w.Edges]
+    print("edges", len(edges))
+    edges = [e for e in edges if Path.Geom.isStrictlyGreater(e.Length, tol)]
+    print("edges greater", len(edges))
+    print(3, time.monotonic() - ts)
+
+    unique_edges = []
+    while edges:
+        candidate = edges.pop()
+        if not any(Path.Geom.edgesSimilar(e, candidate) for e in unique_edges):
+            unique_edges.append(candidate)
+
+    print(4, time.monotonic() - ts)
+    print("unique_edges", len(unique_edges))
+
+
+    # for se in Part.sortEdges(unique_edges):
+    #     Part.show(Part.Wire(se))
+    
+    def getEdgeTangetAt(edge, point):
+        for j in (0, -1):
+            if Path.Geom.pointsCoincide(edge.Vertexes[j].Point, point):
+                return edge.tangentAt(edge.ParameterRange[j])
+
+    def getWireTangetAt(wire, point):
+        for i in (0, -1):
+            for j in (0, -1):
+                edge = wire.Edges[i]
+                if Path.Geom.pointsCoincide(edge.Vertexes[j].Point, point):
+                    return edge.tangentAt(edge.ParameterRange[j])
+
+    wires = [Part.Wire(unique_edges.pop(0))]
+    while unique_edges:
+        w_first_p = wires[-1].OrderedVertexes[0].Point
+        w_last_p = wires[-1].OrderedVertexes[-1].Point
+        w_first_t = getWireTangetAt(wires[-1], w_first_p)
+        w_last_t = getWireTangetAt(wires[-1], w_last_p)
+
+        for i_e, edge in enumerate(unique_edges):
+            e_first_p = edge.Vertexes[0].Point
+            e_last_p = edge.Vertexes[-1].Point
+            e_first_t = getEdgeTangetAt(edge, e_first_p)
+            e_last_t = getEdgeTangetAt(edge, e_last_p)
+
+            p_w = (w_first_p, w_last_p)
+            t_w = (w_first_t, w_last_t)
+            p_e = (e_first_p, e_last_p)
+            t_e = (e_first_t, e_last_t)
+
+            connected_edges = []
+            for i in (0, -1):
+                for j in (0, -1):
+                    if Path.Geom.pointsCoincide(p_e[i], p_w[j], tol) and Path.Geom.compareVecs(t_e[i], t_w[j], error=0.05):
+                        connected_edges.append(edge)
+                        if not Path.Geom.pointsCoincide(p_e[i], p_w[j]):
+                            connected_edges.append(Part.makeLine(p_e[i], p_w[j]))
+                        break
+                if connected_edges:
+                    break
+
+            if connected_edges:
+                wires[-1] = Part.Wire(Part.__sortEdges__(wires[-1].Edges + connected_edges))
+                del unique_edges[i_e]
+                break
+
+        else:
+            wires.append(Part.Wire(unique_edges.pop(0)))
+    
+    return wires
+    
+FreeCAD.ActiveDocument.openTransaction("Macro")
+
+print("Macro - Slots")
+
+ts = time.monotonic()
+
+selection = FreeCADGui.Selection.getSelectionEx()
+sel = selection[0]
+obj = sel.Object
+face = sel.SubObjects[0]
+
+solids = [obj.Shape]
+wires = slots_wires(face, solids, 6)
+print(10, time.monotonic() - ts)
+
+print("wires", len(wires))
+for w in wires:
+    continue
+    Part.show(w)
+
+FreeCAD.ActiveDocument.commitTransaction()
