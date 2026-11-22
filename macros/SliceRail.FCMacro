@@ -1,0 +1,59 @@
+import BOPTools.SplitFeatures
+import CompoundTools.Explode
+import FreeCAD
+import FreeCADGui
+import Part
+from numpy import linspace
+
+__title__ = "Slice rail"
+__doc__ = "Select edge along rail"
+__author__ = ""
+__url__ = ""
+
+print("<<< Macro slice rail >>>")
+
+pieces = 5
+circle_plane_radius = 200
+
+
+def sliceApart(base, tools):
+    f = BOPTools.SplitFeatures.makeSlice(name='Slice')
+    f.Base = base
+    f.Tools = tools
+    f.Mode = 'Split'
+    f.Proxy.execute(f)
+    f.purgeTouched()
+    for obj in f.ViewObject.Proxy.claimChildren():
+        obj.ViewObject.hide()
+    CompoundTools.Explode.explodeCompound(f)
+    f.ViewObject.hide()
+    return f
+    
+
+FreeCAD.ActiveDocument.openTransaction("macro")  # allows to undo
+    
+doc = FreeCAD.ActiveDocument
+selEx = FreeCADGui.Selection.getSelectionEx()
+
+if not selEx or not selEx[0].SubObjects[0] or not isinstance(selEx[0].SubObjects[0], Part.Edge):
+    print("  Select edge along rail")
+else:
+    obj = selEx[0].Object
+    shape = selEx[0].Object.Shape
+    edge = selEx[0].SubObjects[0]
+    #Part.show(edge)
+    start, end = edge.ParameterRange
+    planes = []
+    for p in linspace(start, end, pieces + 1)[1:-1]:
+        tangent = edge.tangentAt(p)
+        point = edge.valueAt(p)
+        circle = Part.makeCircle(circle_plane_radius, point, tangent)
+        plane = Part.Face(Part.Wire(circle))
+        planes.append(plane)
+        #Part.show(plane)
+    
+    cut_planes = [Part.show(plane, f"cut_plane_{i}") for i, plane in enumerate(planes)]
+    
+    slice_obj = sliceApart(obj, cut_planes)
+    
+FreeCAD.ActiveDocument.commitTransaction()  # allows to undo
